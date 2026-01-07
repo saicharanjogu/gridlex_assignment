@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 import { 
   Search, 
   List,
@@ -32,7 +33,7 @@ import {
   Download,
   X,
   Bell,
-  HelpCircle,
+  User,
 } from 'lucide-react';
 import { ViewType, TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
@@ -54,168 +55,277 @@ export function Header() {
 
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [viewConfigOpen, setViewConfigOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const viewOptions: { value: ViewType; label: string; icon: React.ReactNode }[] = [
-    { value: 'list', label: 'Table', icon: <List className="h-4 w-4" /> },
-    { value: 'kanban', label: 'Board', icon: <LayoutGrid className="h-4 w-4" /> },
-    { value: 'calendar', label: 'Calendar', icon: <Calendar className="h-4 w-4" /> },
-    { value: 'map', label: 'Map', icon: <Map className="h-4 w-4" /> },
+  // Keyboard shortcut for search (Cmd/Ctrl + K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const viewOptions: { value: ViewType; label: string; icon: React.ReactNode; description: string }[] = [
+    { value: 'list', label: 'Table', icon: <List className="h-4 w-4" aria-hidden="true" />, description: 'View records in a table format' },
+    { value: 'kanban', label: 'Board', icon: <LayoutGrid className="h-4 w-4" aria-hidden="true" />, description: 'View records in a kanban board' },
+    { value: 'calendar', label: 'Calendar', icon: <Calendar className="h-4 w-4" aria-hidden="true" />, description: 'View records in a calendar' },
+    { value: 'map', label: 'Map', icon: <Map className="h-4 w-4" aria-hidden="true" />, description: 'View records on a map' },
   ];
 
-  const tableOptions: { value: TableType | 'unified'; label: string }[] = [
-    { value: 'contacts', label: 'Contacts' },
-    { value: 'opportunities', label: 'Opportunities' },
-    { value: 'organizations', label: 'Organizations' },
-    { value: 'tasks', label: 'Tasks' },
-    { value: 'unified', label: 'All Records' },
+  const tableOptions: { value: TableType | 'unified'; label: string; description: string }[] = [
+    { value: 'contacts', label: 'Contacts', description: 'Manage contact records' },
+    { value: 'opportunities', label: 'Opportunities', description: 'Track sales opportunities' },
+    { value: 'organizations', label: 'Organizations', description: 'Manage organizations' },
+    { value: 'tasks', label: 'Tasks', description: 'Track tasks and to-dos' },
+    { value: 'unified', label: 'All Records', description: 'View all record types' },
   ];
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    searchInputRef.current?.focus();
+  };
 
   return (
     <TooltipProvider>
-      <header className="border-b border-border bg-background">
-        <div className="h-14 flex items-center justify-between px-4 gap-4">
+      <header 
+        className="border-b border-border bg-background"
+        role="banner"
+      >
+        <div className="h-16 flex items-center justify-between px-4 gap-4">
           {/* Left section */}
           <div className="flex items-center gap-4">
             <GridlexLogo />
             
-            <Separator orientation="vertical" className="h-6" />
+            <Separator orientation="vertical" className="h-6" aria-hidden="true" />
             
-            <Select value={currentTable} onValueChange={(v) => setCurrentTable(v as TableType | 'unified')}>
-              <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent font-medium hover:bg-muted/50 transition-colors">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {tableOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col">
+              <label htmlFor="table-select" className="sr-only">
+                Select data table
+              </label>
+              <Select 
+                value={currentTable} 
+                onValueChange={(v) => setCurrentTable(v as TableType | 'unified')}
+              >
+                <SelectTrigger 
+                  id="table-select"
+                  className="w-[180px] h-10 border-0 bg-transparent font-semibold text-base hover:bg-muted/50 transition-default focus:ring-2 focus:ring-ring"
+                  aria-label={`Current table: ${tableOptions.find(t => t.value === currentTable)?.label}`}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {tableOptions.map((option) => (
+                    <SelectItem 
+                      key={option.value} 
+                      value={option.value}
+                      className="py-3"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-xs text-muted-foreground">{option.description}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Center section - View tabs */}
-          <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as ViewType)} className="hidden md:block">
-            <TabsList className="bg-muted/50 p-1">
-              {viewOptions.map((option) => (
-                <TabsTrigger 
-                  key={option.value} 
-                  value={option.value}
-                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm px-4"
-                >
-                  {option.icon}
-                  <span className="hidden lg:inline">{option.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          <nav aria-label="View type navigation" className="hidden md:block">
+            <Tabs 
+              value={currentView} 
+              onValueChange={(v) => setCurrentView(v as ViewType)}
+            >
+              <TabsList className="bg-muted/50 p-1" aria-label="Select view type">
+                {viewOptions.map((option) => (
+                  <Tooltip key={option.value}>
+                    <TooltipTrigger asChild>
+                      <TabsTrigger 
+                        value={option.value}
+                        className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm px-4 min-h-[44px]"
+                        aria-label={option.description}
+                      >
+                        {option.icon}
+                        <span className="hidden lg:inline">{option.label}</span>
+                      </TabsTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{option.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Keyboard: ⌘{viewOptions.indexOf(option) + 1}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </TabsList>
+            </Tabs>
+          </nav>
 
           {/* Right section */}
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            {/* Search */}
+            <div className="relative" role="search">
+              <label htmlFor="global-search" className="sr-only">
+                Search records
+              </label>
+              <Search 
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" 
+                aria-hidden="true" 
+              />
               <Input
-                placeholder="Search records..."
+                ref={searchInputRef}
+                id="global-search"
+                type="search"
+                placeholder="Search records... (⌘K)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
+                className="w-[200px] lg:w-[280px] h-10 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-2 focus-visible:ring-ring"
+                aria-describedby="search-hint"
               />
+              <span id="search-hint" className="sr-only">
+                Press Command K or Control K to focus search
+              </span>
               {searchQuery && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                  onClick={() => setSearchQuery('')}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                  onClick={handleClearSearch}
+                  aria-label="Clear search"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </Button>
               )}
             </div>
 
-            <Separator orientation="vertical" className="h-6 hidden sm:block" />
+            <Separator orientation="vertical" className="h-6 hidden sm:block" aria-hidden="true" />
 
+            {/* Filter button */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-9 gap-2 text-muted-foreground hover:text-foreground">
-                  <Filter className="h-4 w-4" />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-10 gap-2 text-muted-foreground hover:text-foreground min-w-[44px]"
+                  aria-label={`Filter records${filters.length > 0 ? `, ${filters.length} active filters` : ''}`}
+                  aria-expanded="false"
+                >
+                  <Filter className="h-4 w-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Filter</span>
                   {filters.length > 0 && (
-                    <Badge className="ml-1 px-1.5 py-0.5 text-xs gradient-primary border-0">
+                    <Badge 
+                      className="ml-1 px-1.5 py-0.5 text-xs gradient-primary border-0"
+                      aria-label={`${filters.length} active filters`}
+                    >
                       {filters.length}
                     </Badge>
                   )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Filter records</TooltipContent>
+              <TooltipContent>
+                <p>Filter records</p>
+                {filters.length > 0 && (
+                  <p className="text-xs text-muted-foreground">{filters.length} active filter{filters.length !== 1 ? 's' : ''}</p>
+                )}
+              </TooltipContent>
             </Tooltip>
 
+            {/* Settings button */}
             {currentUser.permissions.canConfigureViews && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                    className="h-10 w-10 text-muted-foreground hover:text-foreground"
                     onClick={() => setViewConfigOpen(true)}
+                    aria-label="Configure view settings"
                   >
-                    <Settings className="h-4 w-4" />
+                    <Settings className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Configure view</TooltipContent>
               </Tooltip>
             )}
 
+            {/* Export button */}
             {currentUser.permissions.canExport && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                    className="h-10 w-10 text-muted-foreground hover:text-foreground"
                     onClick={() => setExportDialogOpen(true)}
+                    aria-label="Export data"
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Export</TooltipContent>
+                <TooltipContent>Export data</TooltipContent>
               </Tooltip>
             )}
 
+            {/* Notifications */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
+                  className="h-10 w-10 text-muted-foreground hover:text-foreground relative"
+                  aria-label="Notifications, 3 unread"
                 >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+                  <Bell className="h-4 w-4" aria-hidden="true" />
+                  <span 
+                    className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" 
+                    aria-hidden="true"
+                  />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Notifications</TooltipContent>
+              <TooltipContent>3 unread notifications</TooltipContent>
             </Tooltip>
 
+            {/* Create button */}
             {currentUser.permissions.canEditRecords && (
-              <Button size="sm" className="h-9 gap-2 gradient-primary border-0 shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all" onClick={openCreateDialog}>
-                <Plus className="h-4 w-4" />
+              <Button 
+                size="sm" 
+                className="h-10 gap-2 gradient-primary border-0 shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-default min-w-[44px]" 
+                onClick={openCreateDialog}
+                aria-label="Create new record"
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">New Record</span>
               </Button>
             )}
 
-            <Separator orientation="vertical" className="h-6" />
+            <Separator orientation="vertical" className="h-6" aria-hidden="true" />
 
             {/* User Menu */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-semibold text-white shadow-md shadow-primary/25">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 h-10 px-2 hover:bg-muted/50"
+                  aria-label={`User menu for ${currentUser.name}`}
+                  aria-haspopup="menu"
+                >
+                  <div 
+                    className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-semibold text-white shadow-md shadow-primary/25"
+                    aria-hidden="true"
+                  >
                     {currentUser.name.charAt(0)}
                   </div>
-                  <div className="hidden lg:block">
+                  <div className="hidden lg:block text-left">
                     <p className="text-sm font-medium leading-none">{currentUser.name}</p>
                     <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
                   </div>
-                </div>
+                </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <div className="text-center">

@@ -11,6 +11,8 @@ import { DeleteConfirmDialog } from '@/components/dialogs/DeleteConfirmDialog';
 import { RecordViewDialog } from '@/components/dialogs/RecordViewDialog';
 import { OnboardingTour } from '@/components/OnboardingTour';
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
+import { SkipLink } from '@/components/ui/skip-link';
+import { LiveRegion, useLiveRegion } from '@/components/ui/live-region';
 
 function AppContent() {
   const {
@@ -26,12 +28,14 @@ function AppContent() {
     closeViewDialog,
     viewingRecord,
     currentTable,
+    currentView,
     openCreateDialog,
     setCurrentView,
   } = useApp();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const { message: liveMessage, announce } = useLiveRegion();
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -41,9 +45,20 @@ function AppContent() {
     }
   }, []);
 
+  // Announce view changes to screen readers
+  useEffect(() => {
+    announce(`Now viewing ${currentTable} in ${currentView} view`);
+  }, [currentTable, currentView, announce]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
       // Show keyboard shortcuts with ?
       if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
@@ -57,6 +72,7 @@ function AppContent() {
           case 'n':
             e.preventDefault();
             openCreateDialog();
+            announce('Create new record dialog opened');
             break;
           case '1':
             e.preventDefault();
@@ -80,15 +96,27 @@ function AppContent() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openCreateDialog, setCurrentView]);
+  }, [openCreateDialog, setCurrentView, announce]);
 
   return (
     <>
+      {/* Skip Link for keyboard navigation */}
+      <SkipLink href="#main-content" />
+      
+      {/* Live region for screen reader announcements */}
+      <LiveRegion message={liveMessage} />
+      
       <div className="flex flex-col h-screen bg-background">
         <Header />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-hidden">
+          <main 
+            id="main-content" 
+            className="flex-1 overflow-hidden"
+            role="main"
+            aria-label={`${currentTable} ${currentView} view`}
+            tabIndex={-1}
+          >
             <ViewContainer />
           </main>
         </div>
