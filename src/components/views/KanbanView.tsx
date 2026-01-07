@@ -2,8 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -12,13 +10,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash, Eye, GripVertical, Plus } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash, Eye, Plus } from 'lucide-react';
 import { Record, Opportunity, Task, Contact, Organization } from '@/types';
 
 interface KanbanColumn {
   id: string;
   title: string;
-  color: string;
 }
 
 export function KanbanView() {
@@ -33,41 +30,41 @@ export function KanbanView() {
 
   const [draggedRecord, setDraggedRecord] = useState<Record | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
   const records = getRecordsForCurrentTable();
 
-  // Define columns based on table type
   const columns: KanbanColumn[] = useMemo(() => {
     switch (currentTable) {
       case 'opportunities':
         return [
-          { id: 'Lead', title: 'Lead', color: 'bg-gray-100' },
-          { id: 'Qualified', title: 'Qualified', color: 'bg-blue-100' },
-          { id: 'Proposal', title: 'Proposal', color: 'bg-yellow-100' },
-          { id: 'Negotiation', title: 'Negotiation', color: 'bg-orange-100' },
-          { id: 'Closed Won', title: 'Closed Won', color: 'bg-green-100' },
-          { id: 'Closed Lost', title: 'Closed Lost', color: 'bg-red-100' },
+          { id: 'Lead', title: 'Lead' },
+          { id: 'Qualified', title: 'Qualified' },
+          { id: 'Proposal', title: 'Proposal' },
+          { id: 'Negotiation', title: 'Negotiation' },
+          { id: 'Closed Won', title: 'Won' },
+          { id: 'Closed Lost', title: 'Lost' },
         ];
       case 'tasks':
         return [
-          { id: 'Pending', title: 'Pending', color: 'bg-gray-100' },
-          { id: 'In Progress', title: 'In Progress', color: 'bg-blue-100' },
-          { id: 'Completed', title: 'Completed', color: 'bg-green-100' },
-          { id: 'Cancelled', title: 'Cancelled', color: 'bg-red-100' },
+          { id: 'Pending', title: 'To Do' },
+          { id: 'In Progress', title: 'In Progress' },
+          { id: 'Completed', title: 'Done' },
+          { id: 'Cancelled', title: 'Cancelled' },
         ];
       case 'contacts':
       case 'organizations':
         return [
-          { id: 'Active', title: 'Active', color: 'bg-green-100' },
-          { id: 'Pending', title: 'Pending', color: 'bg-yellow-100' },
-          { id: 'Inactive', title: 'Inactive', color: 'bg-gray-100' },
-          { id: 'Prospect', title: 'Prospect', color: 'bg-blue-100' },
+          { id: 'Active', title: 'Active' },
+          { id: 'Pending', title: 'Pending' },
+          { id: 'Inactive', title: 'Inactive' },
+          { id: 'Prospect', title: 'Prospect' },
         ];
       default:
         return [
-          { id: 'Active', title: 'Active', color: 'bg-green-100' },
-          { id: 'Pending', title: 'Pending', color: 'bg-yellow-100' },
-          { id: 'Inactive', title: 'Inactive', color: 'bg-gray-100' },
+          { id: 'Active', title: 'Active' },
+          { id: 'Pending', title: 'Pending' },
+          { id: 'Inactive', title: 'Inactive' },
         ];
     }
   }, [currentTable]);
@@ -76,10 +73,6 @@ export function KanbanView() {
     switch (currentTable) {
       case 'opportunities':
         return 'stage';
-      case 'tasks':
-      case 'contacts':
-      case 'organizations':
-        return 'status';
       default:
         return 'status';
     }
@@ -147,18 +140,18 @@ export function KanbanView() {
     setDragOverColumn(null);
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityDot = (priority: string) => {
     switch (priority) {
       case 'Urgent':
-        return 'bg-red-500';
+        return 'bg-rose-500';
       case 'High':
-        return 'bg-orange-500';
+        return 'bg-amber-500';
       case 'Medium':
-        return 'bg-yellow-500';
+        return 'bg-blue-500';
       case 'Low':
-        return 'bg-green-500';
+        return 'bg-slate-400';
       default:
-        return 'bg-gray-500';
+        return 'bg-slate-400';
     }
   };
 
@@ -187,90 +180,87 @@ export function KanbanView() {
   const renderCard = (record: Record) => {
     const isOpportunity = record.tableType === 'opportunities';
     const isTask = record.tableType === 'tasks';
+    const isHovered = hoveredCard === record.id;
 
     return (
-      <Card
+      <div
         key={record.id}
-        className={`mb-3 cursor-grab active:cursor-grabbing transition-all ${
-          draggedRecord?.id === record.id ? 'opacity-50 scale-95' : ''
+        className={`group p-3 bg-background rounded-lg border border-border/40 cursor-grab active:cursor-grabbing transition-micro hover:border-border ${
+          draggedRecord?.id === record.id ? 'opacity-40 scale-[0.98]' : ''
         }`}
         draggable={currentUser.permissions.canEditRecords}
         onDragStart={() => handleDragStart(record)}
+        onMouseEnter={() => setHoveredCard(record.id)}
+        onMouseLeave={() => setHoveredCard(null)}
       >
-        <CardContent className="p-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-sm truncate">
-                  {record.name}
-                </h4>
-                {isOpportunity && (
-                  <p className="text-lg font-semibold text-primary mt-1">
-                    {formatCurrency((record as Opportunity).value)}
-                  </p>
-                )}
-                {isTask && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <div
-                      className={`w-2 h-2 rounded-full ${getPriorityColor(
-                        (record as Task).priority
-                      )}`}
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      {(record as Task).priority}
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-xs">
-                    {getCardSubtitle(record)}
-                  </Badge>
-                </div>
-                {(isOpportunity || isTask) && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {isOpportunity ? 'Close: ' : 'Due: '}
-                    {new Date(
-                      (record as Opportunity).closeDate || (record as Task).dueDate
-                    ).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              {isTask && (
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${getPriorityDot((record as Task).priority)}`} />
+              )}
+              <h4 className="text-sm font-medium text-foreground truncate">
+                {record.name}
+              </h4>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0">
-                  <MoreHorizontal className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </DropdownMenuItem>
-                {currentUser.permissions.canEditRecords && (
-                  <DropdownMenuItem>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {currentUser.permissions.canDeleteRecords && (
-                  <DropdownMenuItem className="text-destructive">
-                    <Trash className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            
+            {isOpportunity && (
+              <p className="text-sm font-semibold text-foreground mt-1">
+                {formatCurrency((record as Opportunity).value)}
+              </p>
+            )}
+            
+            <p className="text-xs text-muted-foreground mt-1.5 truncate">
+              {getCardSubtitle(record)}
+            </p>
+            
+            {(isOpportunity || isTask) && (
+              <p className="text-[11px] text-muted-foreground/70 mt-1">
+                {isOpportunity ? 'Close ' : 'Due '}
+                {new Date(
+                  (record as Opportunity).closeDate || (record as Task).dueDate
+                ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </p>
+            )}
           </div>
-        </CardContent>
-      </Card>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button 
+                className={`p-1 rounded transition-micro ${
+                  isHovered ? 'opacity-100' : 'opacity-0'
+                } text-muted-foreground hover:text-foreground`}
+              >
+                <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem className="text-xs">
+                <Eye className="h-3.5 w-3.5 mr-2" strokeWidth={1.5} />
+                View
+              </DropdownMenuItem>
+              {currentUser.permissions.canEditRecords && (
+                <DropdownMenuItem className="text-xs">
+                  <Edit className="h-3.5 w-3.5 mr-2" strokeWidth={1.5} />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {currentUser.permissions.canDeleteRecords && (
+                <DropdownMenuItem className="text-xs text-rose-600">
+                  <Trash className="h-3.5 w-3.5 mr-2" strokeWidth={1.5} />
+                  Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
-      <div className="flex gap-4 p-4 overflow-x-auto flex-1">
+    <div className="flex h-full overflow-hidden bg-muted/20">
+      <div className="flex gap-4 p-6 overflow-x-auto flex-1">
         {columns.map((column) => {
           const columnRecords = getRecordsForColumn(column.id);
           const isOver = dragOverColumn === column.id;
@@ -278,37 +268,37 @@ export function KanbanView() {
           return (
             <div
               key={column.id}
-              className={`flex flex-col w-72 flex-shrink-0 rounded-lg ${column.color} ${
-                isOver ? 'ring-2 ring-primary' : ''
+              className={`flex flex-col w-72 flex-shrink-0 rounded-xl transition-micro ${
+                isOver ? 'bg-accent/50' : 'bg-transparent'
               }`}
               onDragOver={(e) => handleDragOver(e, column.id)}
               onDragLeave={handleDragLeave}
               onDrop={() => handleDrop(column.id)}
             >
-              <div className="p-3 border-b bg-white/50 rounded-t-lg">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm">{column.title}</h3>
-                  <Badge variant="secondary" className="text-xs">
+              <div className="flex items-center justify-between px-2 py-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-foreground">{column.title}</h3>
+                  <span className="text-xs text-muted-foreground">
                     {columnRecords.length}
-                  </Badge>
+                  </span>
                 </div>
-              </div>
-              <ScrollArea className="flex-1 p-3">
-                {columnRecords.map((record) => renderCard(record))}
-                {columnRecords.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    No records
-                  </div>
+                {currentUser.permissions.canEditRecords && (
+                  <button className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-micro rounded">
+                    <Plus className="h-4 w-4" strokeWidth={1.5} />
+                  </button>
                 )}
-              </ScrollArea>
-              {currentUser.permissions.canEditRecords && (
-                <div className="p-3 border-t bg-white/50 rounded-b-lg">
-                  <Button variant="ghost" size="sm" className="w-full gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Record
-                  </Button>
+              </div>
+              
+              <ScrollArea className="flex-1">
+                <div className="space-y-2 px-1 pb-4">
+                  {columnRecords.map((record) => renderCard(record))}
+                  {columnRecords.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground/50 text-xs">
+                      No items
+                    </div>
+                  )}
                 </div>
-              )}
+              </ScrollArea>
             </div>
           );
         })}

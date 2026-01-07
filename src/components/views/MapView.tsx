@@ -1,10 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { MapPin, List, Search, X } from 'lucide-react';
+import { MapPin, Search, X, List } from 'lucide-react';
 import { Record, Contact, Organization, Opportunity, Task } from '@/types';
 
 export function MapView() {
@@ -26,7 +23,6 @@ export function MapView() {
 
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
   const [showList, setShowList] = useState(true);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [localSearch, setLocalSearch] = useState('');
 
   const records = getRecordsForCurrentTable();
@@ -64,18 +60,7 @@ export function MapView() {
   }, [records, searchQuery, localSearch, filters]);
 
   const getRecordName = (record: Record): string => {
-    switch (record.tableType) {
-      case 'contacts':
-        return (record as Contact).name;
-      case 'organizations':
-        return (record as Organization).name;
-      case 'opportunities':
-        return (record as Opportunity).name;
-      case 'tasks':
-        return (record as Task).name;
-      default:
-        return 'Unknown';
-    }
+    return record.name;
   };
 
   const getRecordSubtitle = (record: Record): string => {
@@ -88,6 +73,7 @@ export function MapView() {
         return new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: 'USD',
+          minimumFractionDigits: 0,
         }).format((record as Opportunity).value);
       case 'tasks':
         return (record as Task).assignedTo;
@@ -96,62 +82,29 @@ export function MapView() {
     }
   };
 
-  const getStatusBadge = (record: Record) => {
-    let status = '';
-    let variant: 'default' | 'secondary' | 'destructive' | 'outline' = 'default';
-
-    switch (record.tableType) {
-      case 'contacts':
-        status = (record as Contact).status;
-        break;
-      case 'organizations':
-        status = (record as Organization).status;
-        break;
-      case 'opportunities':
-        status = (record as Opportunity).stage;
-        break;
-      case 'tasks':
-        status = (record as Task).status;
-        break;
-    }
-
-    if (['Active', 'Completed', 'Closed Won'].includes(status)) {
-      variant = 'default';
-    } else if (['Pending', 'In Progress', 'Proposal', 'Negotiation'].includes(status)) {
-      variant = 'secondary';
-    } else if (['Inactive', 'Cancelled', 'Closed Lost'].includes(status)) {
-      variant = 'destructive';
-    }
-
-    return <Badge variant={variant}>{status}</Badge>;
-  };
-
-  // Simple map placeholder - in production, you'd use react-leaflet or similar
   const MapPlaceholder = () => (
-    <div className="relative w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-      <div className="absolute inset-0 opacity-20">
+    <div className="relative w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+      <div className="absolute inset-0 opacity-10">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
             <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5" />
+              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.3" />
             </pattern>
           </defs>
           <rect width="100" height="100" fill="url(#grid)" />
         </svg>
       </div>
       
-      {/* Map markers */}
       {filteredRecords.map((record, index) => {
         if (!record.location) return null;
         
-        // Simple positioning based on lat/lng (normalized for display)
         const left = ((record.location.lng + 130) / 60) * 100;
         const top = ((50 - record.location.lat) / 30) * 100;
         
         return (
-          <div
+          <button
             key={record.id}
-            className="absolute transform -translate-x-1/2 -translate-y-full cursor-pointer transition-transform hover:scale-110"
+            className="absolute transform -translate-x-1/2 -translate-y-full transition-micro hover:scale-110"
             style={{
               left: `${Math.min(Math.max(left, 5), 95)}%`,
               top: `${Math.min(Math.max(top, 10), 90)}%`,
@@ -160,24 +113,23 @@ export function MapView() {
           >
             <div className="relative">
               <MapPin
-                className={`h-8 w-8 ${
+                className={`h-6 w-6 ${
                   selectedRecord?.id === record.id
-                    ? 'text-primary fill-primary'
-                    : 'text-red-500 fill-red-500'
+                    ? 'text-foreground'
+                    : 'text-rose-500'
                 }`}
+                strokeWidth={1.5}
+                fill={selectedRecord?.id === record.id ? 'currentColor' : '#f43f5e'}
               />
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center text-xs font-bold shadow">
-                {index + 1}
-              </div>
             </div>
-          </div>
+          </button>
         );
       })}
       
       {filteredRecords.length === 0 && (
         <div className="text-center text-muted-foreground">
-          <MapPin className="h-12 w-12 mx-auto mb-2 opacity-50" />
-          <p>No records with location data</p>
+          <MapPin className="h-8 w-8 mx-auto mb-2 opacity-30" strokeWidth={1.5} />
+          <p className="text-sm">No locations</p>
         </div>
       )}
     </div>
@@ -191,53 +143,38 @@ export function MapView() {
         
         {/* Map Controls */}
         <div className="absolute top-4 left-4 right-4 flex items-center gap-2">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" strokeWidth={1.5} />
             <Input
               placeholder="Search locations..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="pl-9 bg-white shadow-md"
+              className="pl-9 h-9 text-sm bg-background/95 backdrop-blur border-border/50 shadow-sm"
             />
             {localSearch && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-micro"
                 onClick={() => setLocalSearch('')}
               >
-                <X className="h-4 w-4" />
-              </Button>
+                <X className="h-3.5 w-3.5" strokeWidth={1.5} />
+              </button>
             )}
           </div>
-          <Button
-            variant={showList ? 'default' : 'outline'}
-            size="icon"
-            className="bg-white shadow-md"
+          <button
             onClick={() => setShowList(!showList)}
+            className={`p-2 rounded-md transition-micro ${
+              showList 
+                ? 'bg-foreground text-background' 
+                : 'bg-background/95 text-muted-foreground hover:text-foreground border border-border/50'
+            } shadow-sm`}
           >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 bg-white rounded-lg shadow-md p-3">
-          <h4 className="text-sm font-medium mb-2">Legend</h4>
-          <div className="space-y-1 text-xs">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-red-500 fill-red-500" />
-              <span>Location</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary fill-primary" />
-              <span>Selected</span>
-            </div>
-          </div>
+            <List className="h-4 w-4" strokeWidth={1.5} />
+          </button>
         </div>
 
         {/* Record Count */}
-        <div className="absolute bottom-4 right-4 bg-white rounded-lg shadow-md px-3 py-2">
-          <span className="text-sm font-medium">
+        <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-background/95 backdrop-blur rounded-md shadow-sm border border-border/50">
+          <span className="text-xs font-medium text-muted-foreground">
             {filteredRecords.length} locations
           </span>
         </div>
@@ -245,47 +182,40 @@ export function MapView() {
 
       {/* Side Panel */}
       {showList && (
-        <div className="w-80 border-l bg-background flex flex-col">
-          <div className="p-4 border-b">
-            <h3 className="font-semibold">Locations</h3>
-            <p className="text-sm text-muted-foreground">
-              {filteredRecords.length} records with location data
+        <div className="w-72 border-l border-border/30 bg-background flex flex-col">
+          <div className="px-4 py-3 border-b border-border/30">
+            <h3 className="text-sm font-medium">Locations</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {filteredRecords.length} records
             </p>
           </div>
           <ScrollArea className="flex-1">
-            <div className="p-2 space-y-2">
+            <div className="p-2 space-y-1">
               {filteredRecords.map((record, index) => (
-                <Card
+                <button
                   key={record.id}
-                  className={`cursor-pointer transition-colors ${
+                  className={`w-full flex items-start gap-3 p-2.5 text-left rounded-lg transition-micro ${
                     selectedRecord?.id === record.id
-                      ? 'border-primary bg-primary/5'
-                      : 'hover:bg-muted/50'
+                      ? 'bg-accent'
+                      : 'hover:bg-accent/50'
                   }`}
                   onClick={() => setSelectedRecord(record)}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">
-                          {getRecordName(record)}
-                        </h4>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {getRecordSubtitle(record)}
-                        </p>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {record.tableType}
-                          </Badge>
-                          {getStatusBadge(record)}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-[10px] font-semibold flex-shrink-0 mt-0.5">
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium truncate">
+                      {getRecordName(record)}
+                    </h4>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      {getRecordSubtitle(record)}
+                    </p>
+                    <span className="text-[10px] text-muted-foreground/70 capitalize">
+                      {record.tableType}
+                    </span>
+                  </div>
+                </button>
               ))}
             </div>
           </ScrollArea>
@@ -294,38 +224,35 @@ export function MapView() {
 
       {/* Record Detail Dialog */}
       <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-base font-semibold">
               {selectedRecord && getRecordName(selectedRecord)}
             </DialogTitle>
           </DialogHeader>
           {selectedRecord && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="capitalize">
-                  {selectedRecord.tableType}
-                </Badge>
-                {getStatusBadge(selectedRecord)}
-              </div>
+            <div className="space-y-4 pt-2">
+              <p className="text-sm text-muted-foreground capitalize">
+                {selectedRecord.tableType}
+              </p>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 {selectedRecord.tableType === 'contacts' && (
                   <>
                     <div>
-                      <label className="text-sm text-muted-foreground">Email</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Email</p>
                       <p className="font-medium">{(selectedRecord as Contact).email}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Phone</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Phone</p>
                       <p className="font-medium">{(selectedRecord as Contact).phone}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Organization</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Organization</p>
                       <p className="font-medium">{(selectedRecord as Contact).organization}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Role</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Role</p>
                       <p className="font-medium">{(selectedRecord as Contact).role}</p>
                     </div>
                   </>
@@ -333,15 +260,15 @@ export function MapView() {
                 {selectedRecord.tableType === 'organizations' && (
                   <>
                     <div>
-                      <label className="text-sm text-muted-foreground">Industry</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Industry</p>
                       <p className="font-medium">{(selectedRecord as Organization).industry}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Contact Person</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Contact</p>
                       <p className="font-medium">{(selectedRecord as Organization).contactPerson}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Phone</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Phone</p>
                       <p className="font-medium">{(selectedRecord as Organization).phone}</p>
                     </div>
                   </>
@@ -349,22 +276,21 @@ export function MapView() {
                 {selectedRecord.tableType === 'opportunities' && (
                   <>
                     <div>
-                      <label className="text-sm text-muted-foreground">Value</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Value</p>
                       <p className="font-medium">
                         {new Intl.NumberFormat('en-US', {
                           style: 'currency',
                           currency: 'USD',
+                          minimumFractionDigits: 0,
                         }).format((selectedRecord as Opportunity).value)}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Close Date</label>
-                      <p className="font-medium">
-                        {new Date((selectedRecord as Opportunity).closeDate).toLocaleDateString()}
-                      </p>
+                      <p className="text-muted-foreground text-xs mb-0.5">Stage</p>
+                      <p className="font-medium">{(selectedRecord as Opportunity).stage}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Assigned To</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Assigned To</p>
                       <p className="font-medium">{(selectedRecord as Opportunity).assignedTo}</p>
                     </div>
                   </>
@@ -372,17 +298,17 @@ export function MapView() {
                 {selectedRecord.tableType === 'tasks' && (
                   <>
                     <div>
-                      <label className="text-sm text-muted-foreground">Due Date</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Due Date</p>
                       <p className="font-medium">
                         {new Date((selectedRecord as Task).dueDate).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Priority</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Priority</p>
                       <p className="font-medium">{(selectedRecord as Task).priority}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Assigned To</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Assigned To</p>
                       <p className="font-medium">{(selectedRecord as Task).assignedTo}</p>
                     </div>
                   </>
@@ -391,8 +317,8 @@ export function MapView() {
 
               {selectedRecord.location && (
                 <div>
-                  <label className="text-sm text-muted-foreground">Coordinates</label>
-                  <p className="font-medium">
+                  <p className="text-muted-foreground text-xs mb-0.5">Coordinates</p>
+                  <p className="text-sm font-medium">
                     {selectedRecord.location.lat.toFixed(4)}, {selectedRecord.location.lng.toFixed(4)}
                   </p>
                 </div>

@@ -4,9 +4,7 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import {
   Select,
   SelectContent,
@@ -14,25 +12,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { Badge } from '@/components/ui/badge';
 import { 
-  ChevronDown, 
   Plus, 
   X, 
-  Save, 
   List, 
   LayoutGrid, 
   Calendar, 
   Map,
-  Bookmark
+  Filter,
+  Bookmark,
+  ChevronRight,
 } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
-import { Filter } from '@/types';
+import { Filter as FilterType } from '@/types';
 
 export function Sidebar() {
   const {
@@ -47,10 +39,9 @@ export function Sidebar() {
   } = useApp();
 
   const [newFilterField, setNewFilterField] = useState('');
-  const [newFilterOperator, setNewFilterOperator] = useState<Filter['operator']>('contains');
+  const [newFilterOperator, setNewFilterOperator] = useState<FilterType['operator']>('contains');
   const [newFilterValue, setNewFilterValue] = useState('');
-  const [isFiltersOpen, setIsFiltersOpen] = useState(true);
-  const [isSavedViewsOpen, setIsSavedViewsOpen] = useState(true);
+  const [showFilterForm, setShowFilterForm] = useState(false);
 
   const fields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
   const filterableFields = fields.filter(f => f.filterable);
@@ -64,6 +55,7 @@ export function Sidebar() {
       });
       setNewFilterField('');
       setNewFilterValue('');
+      setShowFilterForm(false);
     }
   };
 
@@ -72,133 +64,125 @@ export function Sidebar() {
   );
 
   const getViewIcon = (type: string) => {
+    const iconProps = { className: "h-4 w-4", strokeWidth: 1.5 };
     switch (type) {
-      case 'list': return <List className="h-4 w-4" />;
-      case 'kanban': return <LayoutGrid className="h-4 w-4" />;
-      case 'calendar': return <Calendar className="h-4 w-4" />;
-      case 'map': return <Map className="h-4 w-4" />;
-      default: return <List className="h-4 w-4" />;
+      case 'list': return <List {...iconProps} />;
+      case 'kanban': return <LayoutGrid {...iconProps} />;
+      case 'calendar': return <Calendar {...iconProps} />;
+      case 'map': return <Map {...iconProps} />;
+      default: return <List {...iconProps} />;
     }
   };
 
   return (
-    <aside className="w-64 border-r bg-muted/30 flex flex-col h-full">
+    <aside className="w-56 flex flex-col h-full bg-sidebar border-r border-border/30">
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
-          {/* Saved Views Section */}
-          <Collapsible open={isSavedViewsOpen} onOpenChange={setIsSavedViewsOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between p-2">
-                <span className="flex items-center gap-2">
-                  <Bookmark className="h-4 w-4" />
-                  Saved Views
-                </span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isSavedViewsOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2 mt-2">
-              {savedViewsForTable.length > 0 ? (
-                savedViewsForTable.map((view) => (
-                  <Button
-                    key={view.id}
-                    variant="ghost"
-                    className="w-full justify-start gap-2 text-sm"
-                    onClick={() => setActiveViewConfig(view)}
-                  >
+        <div className="py-4">
+          {/* Views Section */}
+          <div className="px-3 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                Views
+              </span>
+            </div>
+            <div className="space-y-0.5">
+              {savedViewsForTable.map((view) => (
+                <button
+                  key={view.id}
+                  onClick={() => setActiveViewConfig(view)}
+                  className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-md transition-micro group"
+                >
+                  <span className="text-muted-foreground/70 group-hover:text-muted-foreground">
                     {getViewIcon(view.type)}
-                    <span className="truncate">{view.name}</span>
-                    {view.isDefault && (
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        Default
-                      </Badge>
-                    )}
-                  </Button>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground px-2">No saved views</p>
-              )}
+                  </span>
+                  <span className="flex-1 text-left truncate">{view.name}</span>
+                  {view.isDefault && (
+                    <span className="text-[10px] text-muted-foreground/50">Default</span>
+                  )}
+                </button>
+              ))}
               {currentUser.permissions.canConfigureViews && (
-                <Button variant="outline" size="sm" className="w-full gap-2 mt-2">
-                  <Plus className="h-4 w-4" />
-                  Save Current View
-                </Button>
+                <button className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/50 rounded-md transition-micro">
+                  <Plus className="h-4 w-4" strokeWidth={1.5} />
+                  <span>New view</span>
+                </button>
               )}
-            </CollapsibleContent>
-          </Collapsible>
-
-          <Separator />
+            </div>
+          </div>
 
           {/* Filters Section */}
-          <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between p-2">
-                <span className="flex items-center gap-2">
-                  <span>Filters</span>
-                  {filters.length > 0 && (
-                    <Badge variant="secondary">{filters.length}</Badge>
-                  )}
-                </span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 mt-2">
-              {/* Active Filters */}
+          <div className="px-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                Filters
+              </span>
               {filters.length > 0 && (
-                <div className="space-y-2">
-                  {filters.map((filter, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 p-2 bg-background rounded-md text-sm"
-                    >
-                      <span className="flex-1 truncate">
-                        {filter.field} {filter.operator} "{filter.value}"
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => removeFilter(index)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-destructive"
-                    onClick={clearFilters}
-                  >
-                    Clear All Filters
-                  </Button>
-                </div>
+                <button
+                  onClick={clearFilters}
+                  className="text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-micro"
+                >
+                  Clear all
+                </button>
               )}
+            </div>
 
-              {/* Add New Filter */}
-              <div className="space-y-2">
-                <Label className="text-xs">Add Filter</Label>
+            {/* Active Filters */}
+            {filters.length > 0 && (
+              <div className="space-y-1 mb-3">
+                {filters.map((filter, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 px-2 py-1.5 text-xs bg-accent/50 rounded-md group"
+                  >
+                    <span className="flex-1 truncate text-muted-foreground">
+                      <span className="text-foreground font-medium">{filter.field}</span>
+                      {' '}{filter.operator}{' '}
+                      <span className="text-foreground">"{filter.value}"</span>
+                    </span>
+                    <button
+                      onClick={() => removeFilter(index)}
+                      className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-micro"
+                    >
+                      <X className="h-3 w-3" strokeWidth={1.5} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Filter */}
+            {!showFilterForm ? (
+              <button
+                onClick={() => setShowFilterForm(true)}
+                className="w-full flex items-center gap-2.5 px-2 py-1.5 text-sm text-muted-foreground/60 hover:text-muted-foreground hover:bg-accent/50 rounded-md transition-micro"
+              >
+                <Filter className="h-4 w-4" strokeWidth={1.5} />
+                <span>Add filter</span>
+              </button>
+            ) : (
+              <div className="space-y-2 p-2 bg-accent/30 rounded-md">
                 <Select value={newFilterField} onValueChange={setNewFilterField}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Select field" />
+                  <SelectTrigger className="h-7 text-xs border-0 bg-background">
+                    <SelectValue placeholder="Field" />
                   </SelectTrigger>
                   <SelectContent>
                     {filterableFields.map((field) => (
-                      <SelectItem key={field.key} value={field.key}>
+                      <SelectItem key={field.key} value={field.key} className="text-xs">
                         {field.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <Select value={newFilterOperator} onValueChange={(v) => setNewFilterOperator(v as Filter['operator'])}>
-                  <SelectTrigger className="h-8 text-sm">
+                <Select value={newFilterOperator} onValueChange={(v) => setNewFilterOperator(v as FilterType['operator'])}>
+                  <SelectTrigger className="h-7 text-xs border-0 bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="equals">Equals</SelectItem>
-                    <SelectItem value="contains">Contains</SelectItem>
-                    <SelectItem value="gt">Greater than</SelectItem>
-                    <SelectItem value="lt">Less than</SelectItem>
+                    <SelectItem value="equals" className="text-xs">equals</SelectItem>
+                    <SelectItem value="contains" className="text-xs">contains</SelectItem>
+                    <SelectItem value="gt" className="text-xs">greater than</SelectItem>
+                    <SelectItem value="lt" className="text-xs">less than</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -206,21 +190,30 @@ export function Sidebar() {
                   placeholder="Value"
                   value={newFilterValue}
                   onChange={(e) => setNewFilterValue(e.target.value)}
-                  className="h-8 text-sm"
+                  className="h-7 text-xs border-0 bg-background"
                 />
 
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={handleAddFilter}
-                  disabled={!newFilterField || !newFilterValue}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Filter
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 h-7 text-xs"
+                    onClick={() => setShowFilterForm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 h-7 text-xs"
+                    onClick={handleAddFilter}
+                    disabled={!newFilterField || !newFilterValue}
+                  >
+                    Apply
+                  </Button>
+                </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+            )}
+          </div>
         </div>
       </ScrollArea>
     </aside>

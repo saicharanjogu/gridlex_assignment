@@ -3,8 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
@@ -12,14 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Record, Task, Opportunity } from '@/types';
 import {
   format,
@@ -36,8 +27,6 @@ import {
   subWeeks,
   addDays,
   subDays,
-  startOfDay,
-  endOfDay,
 } from 'date-fns';
 
 type CalendarViewMode = 'month' | 'week' | 'day';
@@ -48,12 +37,10 @@ export function CalendarView() {
     searchQuery,
     filters,
     getRecordsForCurrentTable,
-    currentUser,
   } = useApp();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
 
   const records = getRecordsForCurrentTable();
@@ -162,190 +149,164 @@ export function CalendarView() {
   const days = getDateRange();
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'Urgent':
-        return 'bg-red-500 text-white';
-      case 'High':
-        return 'bg-orange-500 text-white';
-      case 'Medium':
-        return 'bg-yellow-500';
-      case 'Low':
-        return 'bg-green-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
+  const getEventDot = (record: Record) => {
+    if (record.tableType === 'tasks') {
+      const priority = (record as Task).priority;
+      switch (priority) {
+        case 'Urgent':
+          return 'bg-rose-500';
+        case 'High':
+          return 'bg-amber-500';
+        case 'Medium':
+          return 'bg-blue-500';
+        default:
+          return 'bg-slate-400';
+      }
     }
-  };
-
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'Closed Won':
-        return 'bg-green-500 text-white';
-      case 'Closed Lost':
-        return 'bg-red-500 text-white';
-      case 'Negotiation':
-        return 'bg-orange-500 text-white';
-      case 'Proposal':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-blue-500 text-white';
+    if (record.tableType === 'opportunities') {
+      const stage = (record as Opportunity).stage;
+      if (stage === 'Closed Won') return 'bg-emerald-500';
+      if (stage === 'Closed Lost') return 'bg-rose-500';
+      return 'bg-violet-500';
     }
-  };
-
-  const renderRecordBadge = (record: Record) => {
-    const isTask = record.tableType === 'tasks';
-    const isOpportunity = record.tableType === 'opportunities';
-
-    let colorClass = 'bg-primary text-primary-foreground';
-    if (isTask) {
-      colorClass = getPriorityColor((record as Task).priority);
-    } else if (isOpportunity) {
-      colorClass = getStageColor((record as Opportunity).stage);
-    }
-
-    return (
-      <div
-        key={record.id}
-        className={`text-xs px-2 py-1 rounded truncate cursor-pointer hover:opacity-80 ${colorClass}`}
-        onClick={() => setSelectedRecord(record)}
-      >
-        {(record as Task | Opportunity).name || (record as Record).name}
-      </div>
-    );
+    return 'bg-slate-400';
   };
 
   const renderMonthView = () => (
-    <div className="grid grid-cols-7 gap-px bg-border flex-1">
-      {weekDays.map((day) => (
-        <div
-          key={day}
-          className="bg-muted p-2 text-center text-sm font-medium"
-        >
-          {day}
-        </div>
-      ))}
-      {days.map((day) => {
-        const dayRecords = getRecordsForDate(day);
-        const isCurrentMonth = isSameMonth(day, currentDate);
-        const isToday = isSameDay(day, new Date());
-
-        return (
+    <div className="flex-1 flex flex-col">
+      <div className="grid grid-cols-7 border-b border-border/30">
+        {weekDays.map((day) => (
           <div
-            key={day.toISOString()}
-            className={`bg-background p-2 min-h-[100px] ${
-              !isCurrentMonth ? 'opacity-50' : ''
-            }`}
-            onClick={() => setSelectedDate(day)}
+            key={day}
+            className="px-3 py-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wider text-center"
           >
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 flex-1">
+        {days.map((day, index) => {
+          const dayRecords = getRecordsForDate(day);
+          const isCurrentMonth = isSameMonth(day, currentDate);
+          const isToday = isSameDay(day, new Date());
+
+          return (
             <div
-              className={`text-sm font-medium mb-1 w-7 h-7 flex items-center justify-center rounded-full ${
-                isToday ? 'bg-primary text-primary-foreground' : ''
+              key={day.toISOString()}
+              className={`min-h-[100px] p-2 border-b border-r border-border/20 ${
+                !isCurrentMonth ? 'bg-muted/20' : ''
               }`}
             >
-              {format(day, 'd')}
+              <div className="flex items-center justify-center mb-1">
+                <span
+                  className={`w-7 h-7 flex items-center justify-center text-sm rounded-full ${
+                    isToday
+                      ? 'bg-foreground text-background font-medium'
+                      : isCurrentMonth
+                        ? 'text-foreground'
+                        : 'text-muted-foreground/50'
+                  }`}
+                >
+                  {format(day, 'd')}
+                </span>
+              </div>
+              <div className="space-y-0.5">
+                {dayRecords.slice(0, 3).map((record) => (
+                  <button
+                    key={record.id}
+                    onClick={() => setSelectedRecord(record)}
+                    className="w-full flex items-center gap-1.5 px-1.5 py-0.5 text-xs text-left rounded hover:bg-accent/50 transition-micro truncate"
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getEventDot(record)}`} />
+                    <span className="truncate">{record.name}</span>
+                  </button>
+                ))}
+                {dayRecords.length > 3 && (
+                  <span className="text-[10px] text-muted-foreground px-1.5">
+                    +{dayRecords.length - 3} more
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="space-y-1">
-              {dayRecords.slice(0, 3).map((record) => renderRecordBadge(record))}
-              {dayRecords.length > 3 && (
-                <div className="text-xs text-muted-foreground">
-                  +{dayRecords.length - 3} more
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 
   const renderWeekView = () => (
-    <div className="grid grid-cols-7 gap-px bg-border flex-1">
-      {days.map((day) => {
-        const dayRecords = getRecordsForDate(day);
-        const isToday = isSameDay(day, new Date());
-
-        return (
-          <div key={day.toISOString()} className="bg-background flex flex-col">
-            <div
-              className={`p-2 text-center border-b ${
-                isToday ? 'bg-primary/10' : ''
-              }`}
-            >
-              <div className="text-xs text-muted-foreground">
+    <div className="flex-1 flex flex-col">
+      <div className="grid grid-cols-7 border-b border-border/30">
+        {days.map((day) => {
+          const isToday = isSameDay(day, new Date());
+          return (
+            <div key={day.toISOString()} className="px-3 py-3 text-center">
+              <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                 {format(day, 'EEE')}
               </div>
               <div
-                className={`text-lg font-medium w-8 h-8 flex items-center justify-center rounded-full mx-auto ${
-                  isToday ? 'bg-primary text-primary-foreground' : ''
+                className={`mt-1 w-8 h-8 mx-auto flex items-center justify-center text-lg rounded-full ${
+                  isToday ? 'bg-foreground text-background font-medium' : ''
                 }`}
               >
                 {format(day, 'd')}
               </div>
             </div>
-            <ScrollArea className="flex-1 p-2">
+          );
+        })}
+      </div>
+      <div className="grid grid-cols-7 flex-1">
+        {days.map((day) => {
+          const dayRecords = getRecordsForDate(day);
+          return (
+            <ScrollArea key={day.toISOString()} className="border-r border-border/20 p-2">
               <div className="space-y-1">
-                {dayRecords.map((record) => renderRecordBadge(record))}
+                {dayRecords.map((record) => (
+                  <button
+                    key={record.id}
+                    onClick={() => setSelectedRecord(record)}
+                    className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs text-left rounded hover:bg-accent/50 transition-micro"
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${getEventDot(record)}`} />
+                    <span className="truncate">{record.name}</span>
+                  </button>
+                ))}
               </div>
             </ScrollArea>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 
   const renderDayView = () => {
     const dayRecords = getRecordsForDate(currentDate);
-    const hours = Array.from({ length: 24 }, (_, i) => i);
 
     return (
-      <div className="flex-1 overflow-auto">
-        <div className="text-center p-4 border-b">
-          <div className="text-2xl font-bold">{format(currentDate, 'EEEE')}</div>
-          <div className="text-muted-foreground">
-            {format(currentDate, 'MMMM d, yyyy')}
-          </div>
+      <div className="flex-1 p-6">
+        <div className="text-center mb-6">
+          <div className="text-2xl font-semibold">{format(currentDate, 'EEEE')}</div>
+          <div className="text-muted-foreground">{format(currentDate, 'MMMM d, yyyy')}</div>
         </div>
-        <div className="p-4">
-          <h3 className="font-semibold mb-4">
-            Events ({dayRecords.length})
-          </h3>
-          <div className="space-y-2">
-            {dayRecords.map((record) => (
-              <Card
-                key={record.id}
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => setSelectedRecord(record)}
-              >
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">
-                        {(record as Task | Opportunity).name || (record as Record).name}
-                      </h4>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {record.tableType}
-                      </p>
-                    </div>
-                    {record.tableType === 'tasks' && (
-                      <Badge className={getPriorityColor((record as Task).priority)}>
-                        {(record as Task).priority}
-                      </Badge>
-                    )}
-                    {record.tableType === 'opportunities' && (
-                      <Badge className={getStageColor((record as Opportunity).stage)}>
-                        {(record as Opportunity).stage}
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {dayRecords.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No events for this day
+        <div className="max-w-md mx-auto space-y-2">
+          {dayRecords.map((record) => (
+            <button
+              key={record.id}
+              onClick={() => setSelectedRecord(record)}
+              className="w-full flex items-center gap-3 p-3 text-left rounded-lg border border-border/40 hover:border-border transition-micro"
+            >
+              <div className={`w-2 h-2 rounded-full ${getEventDot(record)}`} />
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-medium truncate">{record.name}</h4>
+                <p className="text-xs text-muted-foreground capitalize">{record.tableType}</p>
               </div>
-            )}
-          </div>
+            </button>
+          ))}
+          {dayRecords.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <p className="text-sm">No events</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -354,40 +315,51 @@ export function CalendarView() {
   return (
     <div className="flex flex-col h-full">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
-          </Button>
-          <Button variant="ghost" size="icon" onClick={navigatePrevious}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={navigateNext}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
+        <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold">
             {viewMode === 'day'
               ? format(currentDate, 'MMMM d, yyyy')
               : format(currentDate, 'MMMM yyyy')}
           </h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={navigatePrevious}
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded transition-micro"
+            >
+              <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={navigateNext}
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded transition-micro"
+            >
+              <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
+        
         <div className="flex items-center gap-2">
-          <Select value={viewMode} onValueChange={(v) => setViewMode(v as CalendarViewMode)}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Month</SelectItem>
-              <SelectItem value="week">Week</SelectItem>
-              <SelectItem value="day">Day</SelectItem>
-            </SelectContent>
-          </Select>
-          {currentUser.permissions.canEditRecords && (
-            <Button size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Event
-            </Button>
-          )}
+          <button
+            onClick={goToToday}
+            className="px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded transition-micro"
+          >
+            Today
+          </button>
+          <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50">
+            {(['month', 'week', 'day'] as CalendarViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-micro capitalize ${
+                  viewMode === mode
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -400,53 +372,69 @@ export function CalendarView() {
 
       {/* Record Detail Dialog */}
       <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {selectedRecord && ((selectedRecord as Task | Opportunity).name || (selectedRecord as Record).name)}
+            <DialogTitle className="text-base font-semibold">
+              {selectedRecord?.name}
             </DialogTitle>
           </DialogHeader>
           {selectedRecord && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-muted-foreground">Type</label>
-                  <p className="font-medium capitalize">{selectedRecord.tableType}</p>
-                </div>
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${getEventDot(selectedRecord)}`} />
+                <span className="text-sm text-muted-foreground capitalize">
+                  {selectedRecord.tableType}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 {selectedRecord.tableType === 'tasks' && (
                   <>
                     <div>
-                      <label className="text-sm text-muted-foreground">Priority</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Priority</p>
                       <p className="font-medium">{(selectedRecord as Task).priority}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Status</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Status</p>
                       <p className="font-medium">{(selectedRecord as Task).status}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Assigned To</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Assigned To</p>
                       <p className="font-medium">{(selectedRecord as Task).assignedTo}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs mb-0.5">Due Date</p>
+                      <p className="font-medium">
+                        {new Date((selectedRecord as Task).dueDate).toLocaleDateString()}
+                      </p>
                     </div>
                   </>
                 )}
                 {selectedRecord.tableType === 'opportunities' && (
                   <>
                     <div>
-                      <label className="text-sm text-muted-foreground">Value</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Value</p>
                       <p className="font-medium">
                         {new Intl.NumberFormat('en-US', {
                           style: 'currency',
                           currency: 'USD',
+                          minimumFractionDigits: 0,
                         }).format((selectedRecord as Opportunity).value)}
                       </p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Stage</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Stage</p>
                       <p className="font-medium">{(selectedRecord as Opportunity).stage}</p>
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground">Assigned To</label>
+                      <p className="text-muted-foreground text-xs mb-0.5">Assigned To</p>
                       <p className="font-medium">{(selectedRecord as Opportunity).assignedTo}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs mb-0.5">Close Date</p>
+                      <p className="font-medium">
+                        {new Date((selectedRecord as Opportunity).closeDate).toLocaleDateString()}
+                      </p>
                     </div>
                   </>
                 )}

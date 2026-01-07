@@ -9,7 +9,7 @@ import { Toaster } from '@/components/ui/sonner';
 export default function Home() {
   return (
     <AppProvider>
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col h-screen bg-background">
         <Header />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />

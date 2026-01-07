@@ -2,25 +2,16 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Edit, Trash, Eye } from 'lucide-react';
+import { ArrowUp, ArrowDown, MoreHorizontal, Edit, Trash, Eye, Copy } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
 import { Record } from '@/types';
 
@@ -39,6 +30,7 @@ export function ListView() {
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingCell, setEditingCell] = useState<{ recordId: string; field: string } | null>(null);
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const fields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
   const records = getRecordsForCurrentTable();
@@ -46,7 +38,6 @@ export function ListView() {
   const filteredRecords = useMemo(() => {
     let result = records;
 
-    // Apply search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter((record) =>
@@ -57,7 +48,6 @@ export function ListView() {
       );
     }
 
-    // Apply filters
     filters.forEach((filter) => {
       result = result.filter((record) => {
         const value = (record as Record)[filter.field as keyof Record];
@@ -78,7 +68,6 @@ export function ListView() {
       });
     });
 
-    // Apply sorting
     if (sortField) {
       result = [...result].sort((a, b) => {
         const aVal = (a as Record)[sortField as keyof Record];
@@ -111,37 +100,48 @@ export function ListView() {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-      case 'completed':
-      case 'closed won':
-        return 'default';
-      case 'pending':
-      case 'in progress':
-      case 'proposal':
-      case 'negotiation':
-        return 'secondary';
-      case 'inactive':
-      case 'cancelled':
-      case 'closed lost':
-        return 'destructive';
-      default:
-        return 'outline';
+  const getStatusStyle = (status: string) => {
+    const statusLower = status.toLowerCase();
+    if (['active', 'completed', 'closed won'].includes(statusLower)) {
+      return 'text-emerald-600 bg-emerald-50';
     }
+    if (['pending', 'in progress', 'proposal', 'negotiation', 'qualified'].includes(statusLower)) {
+      return 'text-amber-600 bg-amber-50';
+    }
+    if (['inactive', 'cancelled', 'closed lost'].includes(statusLower)) {
+      return 'text-rose-600 bg-rose-50';
+    }
+    if (['lead', 'prospect'].includes(statusLower)) {
+      return 'text-blue-600 bg-blue-50';
+    }
+    if (['urgent', 'high'].includes(statusLower)) {
+      return 'text-rose-600 bg-rose-50';
+    }
+    if (['medium'].includes(statusLower)) {
+      return 'text-amber-600 bg-amber-50';
+    }
+    if (['low'].includes(statusLower)) {
+      return 'text-slate-600 bg-slate-50';
+    }
+    return 'text-slate-600 bg-slate-50';
   };
 
   const formatCellValue = (value: unknown, fieldType: string) => {
-    if (value === undefined || value === null) return '-';
+    if (value === undefined || value === null) return '—';
     
     switch (fieldType) {
       case 'currency':
         return new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: 'USD',
+          minimumFractionDigits: 0,
         }).format(Number(value));
       case 'date':
-        return new Date(String(value)).toLocaleDateString();
+        return new Date(String(value)).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
       default:
         return String(value);
     }
@@ -150,105 +150,118 @@ export function ListView() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
+        <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">
-            {filteredRecords.length} records
+            {filteredRecords.length} {filteredRecords.length === 1 ? 'record' : 'records'}
           </span>
           {selectedRecords.length > 0 && (
-            <Badge variant="secondary">
+            <span className="text-sm text-foreground font-medium">
               {selectedRecords.length} selected
-            </Badge>
+            </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {currentUser.permissions.canEditRecords && selectedRecords.length > 0 && (
-            <>
-              <Button variant="outline" size="sm">
-                <Edit className="h-4 w-4 mr-2" />
-                Bulk Edit
+        {currentUser.permissions.canEditRecords && selectedRecords.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="h-7 text-xs">
+              <Edit className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
+              Edit
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs">
+              <Copy className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
+              Duplicate
+            </Button>
+            {currentUser.permissions.canDeleteRecords && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50">
+                <Trash className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
+                Delete
               </Button>
-              {currentUser.permissions.canDeleteRecords && (
-                <Button variant="outline" size="sm" className="text-destructive">
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              )}
-            </>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Table */}
       <div className="flex-1 overflow-auto">
-        <Table>
-          <TableHeader className="sticky top-0 bg-background">
-            <TableRow>
-              <TableHead className="w-12">
+        <table className="w-full">
+          <thead className="sticky top-0 bg-background z-10">
+            <tr className="border-b border-border/30">
+              <th className="w-12 px-4 py-2">
                 <Checkbox
                   checked={selectedRecords.length === filteredRecords.length && filteredRecords.length > 0}
                   onCheckedChange={handleSelectAll}
+                  className="border-muted-foreground/30"
                 />
-              </TableHead>
+              </th>
               {currentTable === 'unified' && (
-                <TableHead className="w-32">Type</TableHead>
+                <th className="px-4 py-2 text-left">
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                    Type
+                  </span>
+                </th>
               )}
               {fields.filter(f => f.visible).map((field) => (
-                <TableHead key={field.key}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="-ml-3 h-8"
+                <th key={field.key} className="px-4 py-2 text-left">
+                  <button
                     onClick={() => field.sortable && handleSort(field.key)}
                     disabled={!field.sortable}
+                    className={`flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider transition-micro ${
+                      field.sortable 
+                        ? 'text-muted-foreground hover:text-foreground cursor-pointer' 
+                        : 'text-muted-foreground cursor-default'
+                    }`}
                   >
                     {field.label}
-                    {field.sortable && (
-                      sortField === field.key ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp className="ml-2 h-4 w-4" />
-                        ) : (
-                          <ArrowDown className="ml-2 h-4 w-4" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
-                      )
+                    {sortField === field.key && (
+                      sortOrder === 'asc' 
+                        ? <ArrowUp className="h-3 w-3" strokeWidth={1.5} />
+                        : <ArrowDown className="h-3 w-3" strokeWidth={1.5} />
                     )}
-                  </Button>
-                </TableHead>
+                  </button>
+                </th>
               ))}
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+              <th className="w-12"></th>
+            </tr>
+          </thead>
+          <tbody>
             {filteredRecords.map((record) => (
-              <TableRow
+              <tr
                 key={record.id}
-                className={selectedRecords.includes(record.id) ? 'bg-muted/50' : ''}
+                className={`border-b border-border/20 transition-micro ${
+                  selectedRecords.includes(record.id) 
+                    ? 'bg-accent/30' 
+                    : hoveredRow === record.id 
+                      ? 'bg-accent/20' 
+                      : ''
+                }`}
+                onMouseEnter={() => setHoveredRow(record.id)}
+                onMouseLeave={() => setHoveredRow(null)}
               >
-                <TableCell>
+                <td className="px-4 py-2.5">
                   <Checkbox
                     checked={selectedRecords.includes(record.id)}
                     onCheckedChange={() => toggleRecordSelection(record.id)}
+                    className="border-muted-foreground/30"
                   />
-                </TableCell>
+                </td>
                 {currentTable === 'unified' && (
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
+                  <td className="px-4 py-2.5">
+                    <span className="text-xs text-muted-foreground capitalize">
                       {record.tableType}
-                    </Badge>
-                  </TableCell>
+                    </span>
+                  </td>
                 )}
                 {fields.filter(f => f.visible).map((field) => {
                   const value = (record as Record)[field.key as keyof Record];
                   const isEditing = editingCell?.recordId === record.id && editingCell?.field === field.key;
+                  const isStatusField = ['status', 'stage', 'priority'].includes(field.key);
 
                   return (
-                    <TableCell
+                    <td
                       key={field.key}
-                      className="cursor-pointer"
+                      className="px-4 py-2.5"
                       onDoubleClick={() => {
-                        if (currentUser.permissions.canEditRecords) {
+                        if (currentUser.permissions.canEditRecords && !isStatusField) {
                           setEditingCell({ recordId: record.id, field: field.key });
                         }
                       }}
@@ -263,49 +276,64 @@ export function ListView() {
                               setEditingCell(null);
                             }
                           }}
-                          className="h-8"
+                          className="h-7 text-sm border-0 bg-background shadow-sm"
                         />
-                      ) : field.key === 'status' || field.key === 'stage' || field.key === 'priority' ? (
-                        <Badge variant={getStatusBadgeVariant(String(value))}>
+                      ) : isStatusField ? (
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusStyle(String(value))}`}>
                           {String(value)}
-                        </Badge>
+                        </span>
                       ) : (
-                        formatCellValue(value, field.type)
+                        <span className="text-sm text-foreground">
+                          {formatCellValue(value, field.type)}
+                        </span>
                       )}
-                    </TableCell>
+                    </td>
                   );
                 })}
-                <TableCell>
+                <td className="px-4 py-2.5">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                      <button 
+                        className={`p-1 rounded transition-micro ${
+                          hoveredRow === record.id 
+                            ? 'opacity-100 text-muted-foreground hover:text-foreground' 
+                            : 'opacity-0'
+                        }`}
+                      >
+                        <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
+                      </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Details
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem className="text-sm">
+                        <Eye className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                        View
                       </DropdownMenuItem>
                       {currentUser.permissions.canEditRecords && (
-                        <DropdownMenuItem>
-                          <Edit className="h-4 w-4 mr-2" />
+                        <DropdownMenuItem className="text-sm">
+                          <Edit className="h-4 w-4 mr-2" strokeWidth={1.5} />
                           Edit
                         </DropdownMenuItem>
                       )}
                       {currentUser.permissions.canDeleteRecords && (
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash className="h-4 w-4 mr-2" />
+                        <DropdownMenuItem className="text-sm text-rose-600">
+                          <Trash className="h-4 w-4 mr-2" strokeWidth={1.5} />
                           Delete
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
-              </TableRow>
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
+        
+        {filteredRecords.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <p className="text-sm">No records found</p>
+            <p className="text-xs mt-1">Try adjusting your search or filters</p>
+          </div>
+        )}
       </div>
     </div>
   );
