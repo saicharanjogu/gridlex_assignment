@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -20,9 +20,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuCheckboxItem,
@@ -55,12 +52,10 @@ import {
   GripVertical,
   EyeOff,
   Pin,
-  ArrowUpDown,
   Columns,
   AlignJustify,
   AlignCenter,
   AlignLeft,
-  Settings,
 } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
 import { Record, FieldConfig } from '@/types';
@@ -109,6 +104,17 @@ export function EnhancedListView() {
   const [columns, setColumns] = useState<ColumnConfig[]>(() => 
     baseFields.map((f, i) => ({ ...f, width: 150, pinned: false, order: i }))
   );
+
+  // Reset state when currentTable changes
+  useEffect(() => {
+    const newFields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
+    setColumns(newFields.map((f, i) => ({ ...f, width: 150, pinned: false, order: i })));
+    setCurrentPage(1);
+    setSortField(null);
+    setSortOrder('asc');
+    setEditingCell(null);
+    clearSelection();
+  }, [currentTable, clearSelection]);
 
   const records = getRecordsForCurrentTable();
 
@@ -166,6 +172,13 @@ export function EnhancedListView() {
     const start = (currentPage - 1) * pageSize;
     return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, currentPage, pageSize]);
+
+  // Reset to page 1 when filtered records change significantly
+  useEffect(() => {
+    if (currentPage > Math.ceil(filteredRecords.length / pageSize)) {
+      setCurrentPage(1);
+    }
+  }, [filteredRecords.length, pageSize, currentPage]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -663,7 +676,9 @@ export function EnhancedListView() {
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
-              {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, filteredRecords.length)} of {filteredRecords.length}
+              {filteredRecords.length > 0 
+                ? `${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, filteredRecords.length)} of ${filteredRecords.length}`
+                : '0 records'}
             </span>
             
             <div className="flex items-center gap-1">
@@ -697,7 +712,7 @@ export function EnhancedListView() {
               </Tooltip>
               
               <span className="px-2 text-sm">
-                Page {currentPage} of {totalPages}
+                Page {currentPage} of {totalPages || 1}
               </span>
               
               <Tooltip>
@@ -707,7 +722,7 @@ export function EnhancedListView() {
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || totalPages === 0}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -721,7 +736,7 @@ export function EnhancedListView() {
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || totalPages === 0}
                   >
                     <ChevronsRight className="h-4 w-4" />
                   </Button>

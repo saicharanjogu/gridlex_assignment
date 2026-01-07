@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +16,6 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -99,6 +96,18 @@ export function EnhancedKanbanView() {
     { key: 'priority', label: 'Priority', visible: true },
   ]);
   const [wipLimits, setWipLimits] = useState<{ [key: string]: number }>({});
+
+  // Reset state when currentTable changes
+  useEffect(() => {
+    setDraggedRecord(null);
+    setDragOverColumn(null);
+    setHoveredCard(null);
+    setCollapsedColumns(new Set());
+    setCollapsedSwimlanes(new Set());
+    setSwimlaneBy('none');
+    setQuickAddColumn(null);
+    setQuickAddValue('');
+  }, [currentTable]);
 
   const records = getRecordsForCurrentTable();
 

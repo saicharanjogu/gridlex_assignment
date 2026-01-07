@@ -233,6 +233,17 @@ export function EnhancedMapView() {
     setIsMounted(true);
   }, []);
 
+  // Reset state when currentTable changes
+  useEffect(() => {
+    setSelectedRecord(null);
+    setLocalSearch('');
+    setRadiusSearch({
+      enabled: false,
+      center: null,
+      radius: 10,
+    });
+  }, [currentTable]);
+
   const filteredRecords = useMemo(() => {
     let result = records.filter((record) => record.location);
 

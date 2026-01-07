@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Tooltip,
@@ -50,7 +49,6 @@ import {
   subDays,
   setHours,
   startOfDay,
-  endOfDay,
   isToday,
   parseISO,
 } from 'date-fns';
@@ -74,6 +72,13 @@ export function EnhancedCalendarView() {
   const [draggedEvent, setDraggedEvent] = useState<Record | null>(null);
   const [dragOverDate, setDragOverDate] = useState<Date | null>(null);
   const [showMiniCalendar, setShowMiniCalendar] = useState(true);
+
+  // Reset state when currentTable changes
+  useEffect(() => {
+    setCurrentDate(new Date());
+    setDraggedEvent(null);
+    setDragOverDate(null);
+  }, [currentTable]);
 
   const records = getRecordsForCurrentTable();
 
@@ -625,7 +630,7 @@ export function EnhancedCalendarView() {
               className="rounded-md border"
             />
             
-            <Separator className="my-4" />
+            <div className="my-4 border-t border-border" />
             
             <h4 className="font-semibold text-sm mb-3">Quick Stats</h4>
             <div className="space-y-2">
