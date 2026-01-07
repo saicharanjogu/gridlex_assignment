@@ -2,24 +2,24 @@
 
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { ListView } from './ListView';
-import { KanbanView } from './KanbanView';
-import { CalendarView } from './CalendarView';
-import { MapView } from './MapView';
+import { EnhancedListView } from './EnhancedListView';
+import { EnhancedKanbanView } from './EnhancedKanbanView';
+import { EnhancedCalendarView } from './EnhancedCalendarView';
+import { EnhancedMapView } from './EnhancedMapView';
 
 export function ViewContainer() {
   const { currentView } = useApp();
 
   switch (currentView) {
     case 'list':
-      return <ListView />;
+      return <EnhancedListView />;
     case 'kanban':
-      return <KanbanView />;
+      return <EnhancedKanbanView />;
     case 'calendar':
-      return <CalendarView />;
+      return <EnhancedCalendarView />;
     case 'map':
-      return <MapView />;
+      return <EnhancedMapView />;
     default:
-      return <ListView />;
+      return <EnhancedListView />;
   }
 }

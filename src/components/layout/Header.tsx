@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { 
   Search, 
   List,
@@ -29,11 +30,13 @@ import {
   Settings,
   Filter,
   Download,
-  SlidersHorizontal,
   X,
+  Keyboard,
+  HelpCircle,
 } from 'lucide-react';
 import { ViewType, TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
+import { ViewConfigDialog } from '@/components/dialogs/ViewConfigDialog';
 
 export function Header() {
   const {
@@ -49,6 +52,7 @@ export function Header() {
   } = useApp();
 
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [viewConfigOpen, setViewConfigOpen] = useState(false);
 
   const viewOptions: { value: ViewType; label: string; icon: React.ReactNode }[] = [
     { value: 'list', label: 'Table', icon: <List className="h-4 w-4" /> },
@@ -140,14 +144,30 @@ export function Header() {
                   <Filter className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                   {filters.length > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+                    <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
                       {filters.length}
-                    </span>
+                    </Badge>
                   )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Filter records</TooltipContent>
             </Tooltip>
+
+            {currentUser.permissions.canConfigureViews && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9"
+                    onClick={() => setViewConfigOpen(true)}
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Configure view</TooltipContent>
+              </Tooltip>
+            )}
 
             {currentUser.permissions.canExport && (
               <Tooltip>
@@ -174,14 +194,31 @@ export function Header() {
 
             <Separator orientation="vertical" className="h-6" />
 
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-xs font-medium text-primary-foreground cursor-pointer">
-              {currentUser.name.charAt(0)}
-            </div>
+            {/* User Menu with Role Badge */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-xs font-medium text-primary-foreground">
+                    {currentUser.name.charAt(0)}
+                  </div>
+                  <Badge variant="outline" className="hidden lg:flex text-xs capitalize">
+                    {currentUser.role}
+                  </Badge>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-center">
+                  <p className="font-medium">{currentUser.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </header>
 
       <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
+      <ViewConfigDialog open={viewConfigOpen} onClose={() => setViewConfigOpen(false)} />
     </TooltipProvider>
   );
 }
