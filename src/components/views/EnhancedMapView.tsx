@@ -46,29 +46,6 @@ import {
   Map as MapIcon,
 } from 'lucide-react';
 import { Record, Contact, Organization, Opportunity, Task, TableType } from '@/types';
-import dynamic from 'next/dynamic';
-
-// Dynamically import Leaflet components to avoid SSR issues
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Popup),
-  { ssr: false }
-);
-const CircleComponent = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Circle),
-  { ssr: false }
-);
 
 type MapStyle = 'streets' | 'satellite' | 'terrain';
 
@@ -76,6 +53,152 @@ interface RadiusSearch {
   enabled: boolean;
   center: { lat: number; lng: number } | null;
   radius: number;
+}
+
+// Separate component for the actual map to handle dynamic import properly
+function LeafletMap({ 
+  filteredRecords, 
+  radiusSearch, 
+  mapBounds, 
+  mapStyle,
+  onMarkerClick,
+  getRecordSubtitle,
+  openViewDialog,
+  openEditDialog,
+}: {
+  filteredRecords: Record[];
+  radiusSearch: RadiusSearch;
+  mapBounds: { center: [number, number]; zoom: number };
+  mapStyle: MapStyle;
+  onMarkerClick: (record: Record) => void;
+  getRecordSubtitle: (record: Record) => string;
+  openViewDialog: (record: Record) => void;
+  openEditDialog: (record: Record) => void;
+}) {
+  const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [MapComponents, setMapComponents] = useState<{
+    MapContainer: React.ComponentType<{ center: [number, number]; zoom: number; className: string; children: React.ReactNode }>;
+    TileLayer: React.ComponentType<{ url: string; attribution: string }>;
+    Marker: React.ComponentType<{ position: [number, number]; eventHandlers: { click: () => void }; children: React.ReactNode }>;
+    Popup: React.ComponentType<{ children: React.ReactNode }>;
+    Circle: React.ComponentType<{ center: [number, number]; radius: number; pathOptions: { color: string; fillColor: string; fillOpacity: number } }>;
+  } | null>(null);
+
+  useEffect(() => {
+    // Load Leaflet CSS via link element
+    const linkId = 'leaflet-css';
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement('link');
+      link.id = linkId;
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+    
+    // Import Leaflet and fix default marker icons
+    import('leaflet').then((L) => {
+      delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+      });
+    });
+
+    // Import react-leaflet components
+    import('react-leaflet').then((mod) => {
+      setMapComponents({
+        MapContainer: mod.MapContainer as React.ComponentType<{ center: [number, number]; zoom: number; className: string; children: React.ReactNode }>,
+        TileLayer: mod.TileLayer as React.ComponentType<{ url: string; attribution: string }>,
+        Marker: mod.Marker as React.ComponentType<{ position: [number, number]; eventHandlers: { click: () => void }; children: React.ReactNode }>,
+        Popup: mod.Popup as React.ComponentType<{ children: React.ReactNode }>,
+        Circle: mod.Circle as React.ComponentType<{ center: [number, number]; radius: number; pathOptions: { color: string; fillColor: string; fillOpacity: number } }>,
+      });
+      setLeafletLoaded(true);
+    });
+  }, []);
+
+  const getTileLayerUrl = () => {
+    switch (mapStyle) {
+      case 'satellite':
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case 'terrain':
+        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+      default:
+        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+  };
+
+  if (!leafletLoaded || !MapComponents) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted/30">
+        <div className="text-center">
+          <MapIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
+          <p className="text-muted-foreground">Loading map...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { MapContainer, TileLayer, Marker, Popup, Circle: CircleComponent } = MapComponents;
+
+  return (
+    <MapContainer
+      center={mapBounds.center}
+      zoom={mapBounds.zoom}
+      className="w-full h-full z-0"
+    >
+      <TileLayer
+        url={getTileLayerUrl()}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      />
+      
+      {radiusSearch.enabled && radiusSearch.center && (
+        <CircleComponent
+          center={[radiusSearch.center.lat, radiusSearch.center.lng]}
+          radius={radiusSearch.radius * 1609.34}
+          pathOptions={{ 
+            color: '#3b82f6', 
+            fillColor: '#3b82f6', 
+            fillOpacity: 0.1 
+          }}
+        />
+      )}
+      
+      {filteredRecords.map((record) => {
+        if (!record.location) return null;
+        
+        return (
+          <Marker
+            key={record.id}
+            position={[record.location.lat, record.location.lng]}
+            eventHandlers={{
+              click: () => onMarkerClick(record),
+            }}
+          >
+            <Popup>
+              <div className="p-2 min-w-[200px]">
+                <h4 className="font-semibold">{record.name}</h4>
+                <p className="text-sm text-muted-foreground">{getRecordSubtitle(record)}</p>
+                <Badge variant="outline" className="mt-2 capitalize text-xs">
+                  {record.tableType}
+                </Badge>
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" variant="outline" onClick={() => openViewDialog(record)}>
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                  <Button size="sm" onClick={() => openEditDialog(record)}>
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </MapContainer>
+  );
 }
 
 export function EnhancedMapView() {
@@ -101,13 +224,13 @@ export function EnhancedMapView() {
   const [visibleLayers, setVisibleLayers] = useState<Set<TableType>>(
     new Set(['contacts', 'opportunities', 'organizations', 'tasks'])
   );
-  const [mapReady, setMapReady] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const [hoveredRecord, setHoveredRecord] = useState<string | null>(null);
 
   const records = getRecordsForCurrentTable();
 
   useEffect(() => {
-    setMapReady(true);
+    setIsMounted(true);
   }, []);
 
   const filteredRecords = useMemo(() => {
@@ -249,17 +372,6 @@ export function EnhancedMapView() {
     });
   };
 
-  const getTileLayerUrl = () => {
-    switch (mapStyle) {
-      case 'satellite':
-        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-      case 'terrain':
-        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
-      default:
-        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-    }
-  };
-
   const mapBounds = useMemo(() => {
     if (filteredRecords.length === 0) {
       return { center: [39.8283, -98.5795] as [number, number], zoom: 4 };
@@ -279,62 +391,17 @@ export function EnhancedMapView() {
       <div className="flex h-full bg-background">
         {/* Map Area */}
         <div className="flex-1 relative">
-          {mapReady ? (
-            <MapContainer
-              center={mapBounds.center}
-              zoom={mapBounds.zoom}
-              className="w-full h-full z-0"
-            >
-              <TileLayer
-                url={getTileLayerUrl()}
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              />
-              
-              {radiusSearch.enabled && radiusSearch.center && (
-                <CircleComponent
-                  center={[radiusSearch.center.lat, radiusSearch.center.lng]}
-                  radius={radiusSearch.radius * 1609.34}
-                  pathOptions={{ 
-                    color: '#3b82f6', 
-                    fillColor: '#3b82f6', 
-                    fillOpacity: 0.1 
-                  }}
-                />
-              )}
-              
-              {filteredRecords.map((record) => {
-                if (!record.location) return null;
-                
-                return (
-                  <Marker
-                    key={record.id}
-                    position={[record.location.lat, record.location.lng]}
-                    eventHandlers={{
-                      click: () => handleMarkerClick(record),
-                    }}
-                  >
-                    <Popup>
-                      <div className="p-2 min-w-[200px]">
-                        <h4 className="font-semibold">{record.name}</h4>
-                        <p className="text-sm text-muted-foreground">{getRecordSubtitle(record)}</p>
-                        <Badge variant="outline" className="mt-2 capitalize text-xs">
-                          {record.tableType}
-                        </Badge>
-                        <div className="flex gap-2 mt-3">
-                          <Button size="sm" variant="outline" onClick={() => openViewDialog(record)}>
-                            <Eye className="h-3 w-3 mr-1" />
-                            View
-                          </Button>
-                          <Button size="sm" onClick={() => openEditDialog(record)}>
-                            Edit
-                          </Button>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
+          {isMounted ? (
+            <LeafletMap
+              filteredRecords={filteredRecords}
+              radiusSearch={radiusSearch}
+              mapBounds={mapBounds}
+              mapStyle={mapStyle}
+              onMarkerClick={handleMarkerClick}
+              getRecordSubtitle={getRecordSubtitle}
+              openViewDialog={openViewDialog}
+              openEditDialog={openEditDialog}
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted/30">
               <div className="text-center">
