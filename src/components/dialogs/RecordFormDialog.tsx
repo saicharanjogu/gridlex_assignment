@@ -81,7 +81,7 @@ interface RecordFormDialogProps {
 }
 
 export function RecordFormDialog({ mode, open, onClose, record, tableType }: RecordFormDialogProps) {
-  const { currentTable, createRecord, updateRecord } = useApp();
+  const { currentTable } = useApp();
   
   const effectiveTableType = tableType || (record?.tableType) || (currentTable === 'unified' ? 'contacts' : currentTable);
 
@@ -93,10 +93,10 @@ export function RecordFormDialog({ mode, open, onClose, record, tableType }: Rec
 
   const getIcon = () => {
     switch (effectiveTableType) {
-      case 'contacts': return <Users className="h-5 w-5 text-blue-500" />;
-      case 'opportunities': return <TrendingUp className="h-5 w-5 text-emerald-500" />;
-      case 'organizations': return <Building2 className="h-5 w-5 text-violet-500" />;
-      case 'tasks': return <CheckSquare className="h-5 w-5 text-amber-500" />;
+      case 'contacts': return <Users className="h-5 w-5 text-[#1D78C1]" />;
+      case 'opportunities': return <TrendingUp className="h-5 w-5 text-[#388E3C]" />;
+      case 'organizations': return <Building2 className="h-5 w-5 text-[#9C27B0]" />;
+      case 'tasks': return <CheckSquare className="h-5 w-5 text-[#FF9800]" />;
       default: return null;
     }
   };
@@ -106,11 +106,11 @@ export function RecordFormDialog({ mode, open, onClose, record, tableType }: Rec
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary-subtle border border-primary/20 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-[#EBF5FA] border border-[#1BA9C4]/20 flex items-center justify-center">
               {getIcon()}
             </div>
             <div>
-              <DialogTitle>{getTitle()}</DialogTitle>
+              <DialogTitle className="text-[#003B5C]">{getTitle()}</DialogTitle>
               <DialogDescription>
                 {mode === 'create' 
                   ? `Fill in the details to create a new ${effectiveTableType.slice(0, -1)}.`
@@ -220,7 +220,7 @@ function ContactForm({ mode, record, onClose }: { mode: 'create' | 'edit'; recor
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0 shadow-md shadow-[#003B5C]/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
@@ -306,7 +306,7 @@ function OpportunityForm({ mode, record, onClose }: { mode: 'create' | 'edit'; r
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0 shadow-md shadow-[#003B5C]/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
@@ -389,7 +389,7 @@ function OrganizationForm({ mode, record, onClose }: { mode: 'create' | 'edit'; 
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0 shadow-md shadow-[#003B5C]/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
@@ -481,7 +481,7 @@ function TaskForm({ mode, record, onClose }: { mode: 'create' | 'edit'; record?:
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0 shadow-md shadow-[#003B5C]/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>

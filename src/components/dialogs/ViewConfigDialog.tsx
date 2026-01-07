@@ -36,7 +36,6 @@ import {
   Eye, 
   EyeOff, 
   Save, 
-  Share2, 
   Copy, 
   Trash2,
   Settings,
@@ -149,7 +148,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-[#003B5C]">
               <Settings className="h-5 w-5" />
               Configure View
             </DialogTitle>
@@ -160,16 +159,16 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
 
           <Tabs defaultValue="fields" className="flex-1 flex flex-col min-h-0">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="fields" className="gap-2">
+              <TabsTrigger value="fields" className="gap-2 data-[state=active]:text-[#003B5C]">
                 <Columns className="h-4 w-4" />
                 Fields
               </TabsTrigger>
-              <TabsTrigger value="sorting" className="gap-2">
+              <TabsTrigger value="sorting" className="gap-2 data-[state=active]:text-[#003B5C]">
                 <SortAsc className="h-4 w-4" />
                 Sorting
               </TabsTrigger>
-              <TabsTrigger value="sharing" className="gap-2">
-                <Share2 className="h-4 w-4" />
+              <TabsTrigger value="sharing" className="gap-2 data-[state=active]:text-[#003B5C]">
+                <Users className="h-4 w-4" />
                 Sharing
               </TabsTrigger>
             </TabsList>
@@ -183,7 +182,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
                       Drag to reorder, toggle to show/hide
                     </p>
                   </div>
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="bg-[#EBF5FA] text-[#003B5C]">
                     {visibleCount} of {fields.length} visible
                   </Badge>
                 </div>
@@ -243,7 +242,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
                                 onClick={() => handleFieldVisibilityToggle(index)}
                               >
                                 {field.visible ? (
-                                  <Eye className="h-4 w-4" />
+                                  <Eye className="h-4 w-4 text-[#1BA9C4]" />
                                 ) : (
                                   <EyeOff className="h-4 w-4 text-muted-foreground" />
                                 )}
@@ -351,19 +350,19 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
                       key={option.value}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                         shareMode === option.value 
-                          ? 'border-primary bg-primary/5' 
+                          ? 'border-[#1BA9C4] bg-[#EBF5FA]' 
                           : 'hover:bg-muted/50'
                       }`}
                       onClick={() => setShareMode(option.value as typeof shareMode)}
                     >
-                      <option.icon className={`h-5 w-5 ${shareMode === option.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <option.icon className={`h-5 w-5 ${shareMode === option.value ? 'text-[#1BA9C4]' : 'text-muted-foreground'}`} />
                       <div className="flex-1">
                         <p className="text-sm font-medium">{option.label}</p>
                         <p className="text-xs text-muted-foreground">{option.desc}</p>
                       </div>
                       <div className={`w-4 h-4 rounded-full border-2 ${
                         shareMode === option.value 
-                          ? 'border-primary bg-primary' 
+                          ? 'border-[#1BA9C4] bg-[#1BA9C4]' 
                           : 'border-muted-foreground'
                       }`}>
                         {shareMode === option.value && (
@@ -414,7 +413,11 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={handleSave} disabled={!viewName.trim()}>
+              <Button 
+                onClick={handleSave} 
+                disabled={!viewName.trim()}
+                className="bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0"
+              >
                 <Save className="h-4 w-4 mr-1.5" />
                 Save View
               </Button>

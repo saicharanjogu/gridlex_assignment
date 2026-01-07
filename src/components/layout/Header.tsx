@@ -32,7 +32,6 @@ import {
   Download,
   X,
   Bell,
-  HelpCircle,
 } from 'lucide-react';
 import { ViewType, TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
@@ -101,7 +100,7 @@ export function Header() {
                 <TabsTrigger 
                   key={option.value} 
                   value={option.value}
-                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm px-4"
+                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-[#003B5C] px-4"
                 >
                   {option.icon}
                   <span className="hidden lg:inline">{option.label}</span>
@@ -118,7 +117,7 @@ export function Header() {
                 placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
+                className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-[#1BA9C4]/50"
               />
               {searchQuery && (
                 <Button
@@ -136,11 +135,11 @@ export function Header() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-9 gap-2 text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="sm" className="h-9 gap-2 text-muted-foreground hover:text-[#003B5C]">
                   <Filter className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                   {filters.length > 0 && (
-                    <Badge className="ml-1 px-1.5 py-0.5 text-xs gradient-primary border-0">
+                    <Badge className="ml-1 px-1.5 py-0.5 text-xs bg-[#1BA9C4] hover:bg-[#1BA9C4]/90 border-0">
                       {filters.length}
                     </Badge>
                   )}
@@ -155,7 +154,7 @@ export function Header() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                    className="h-9 w-9 text-muted-foreground hover:text-[#003B5C]"
                     onClick={() => setViewConfigOpen(true)}
                   >
                     <Settings className="h-4 w-4" />
@@ -171,7 +170,7 @@ export function Header() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                    className="h-9 w-9 text-muted-foreground hover:text-[#003B5C]"
                     onClick={() => setExportDialogOpen(true)}
                   >
                     <Download className="h-4 w-4" />
@@ -186,17 +185,21 @@ export function Header() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
+                  className="h-9 w-9 text-muted-foreground hover:text-[#003B5C] relative"
                 >
                   <Bell className="h-4 w-4" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#1BA9C4] rounded-full" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Notifications</TooltipContent>
             </Tooltip>
 
             {currentUser.permissions.canEditRecords && (
-              <Button size="sm" className="h-9 gap-2 gradient-primary border-0 shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all" onClick={openCreateDialog}>
+              <Button 
+                size="sm" 
+                className="h-9 gap-2 bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0 shadow-md shadow-[#003B5C]/25 hover:shadow-lg hover:shadow-[#003B5C]/30 transition-all" 
+                onClick={openCreateDialog}
+              >
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">New Record</span>
               </Button>
@@ -208,11 +211,11 @@ export function Header() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-semibold text-white shadow-md shadow-primary/25">
+                  <div className="w-8 h-8 rounded-full bg-[#003B5C] flex items-center justify-center text-xs font-semibold text-white shadow-md shadow-[#003B5C]/25">
                     {currentUser.name.charAt(0)}
                   </div>
                   <div className="hidden lg:block">
-                    <p className="text-sm font-medium leading-none">{currentUser.name}</p>
+                    <p className="text-sm font-medium leading-none text-[#003B5C]">{currentUser.name}</p>
                     <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
                   </div>
                 </div>

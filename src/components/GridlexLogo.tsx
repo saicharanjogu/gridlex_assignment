@@ -16,27 +16,31 @@ export function GridlexLogo({ size = 'md', showText = true }: GridlexLogoProps) 
 
   return (
     <div className="flex items-center gap-2">
-      {/* Logo Icon - Grid pattern inspired by Gridlex */}
+      {/* Logo Icon - Grid pattern with Gridlex brand colors */}
       <div className={`${sizeClasses[size].icon} relative`}>
         <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <defs>
-            <linearGradient id="gridlex-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#6366f1" />
-              <stop offset="50%" stopColor="#8b5cf6" />
-              <stop offset="100%" stopColor="#a855f7" />
+            <linearGradient id="gridlex-gradient-navy" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#003B5C" />
+              <stop offset="100%" stopColor="#0A3E6B" />
+            </linearGradient>
+            <linearGradient id="gridlex-gradient-cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1BA9C4" />
+              <stop offset="100%" stopColor="#00ACC1" />
             </linearGradient>
           </defs>
-          {/* Main grid squares */}
-          <rect x="2" y="2" width="12" height="12" rx="2" fill="url(#gridlex-gradient)" />
-          <rect x="18" y="2" width="12" height="12" rx="2" fill="url(#gridlex-gradient)" opacity="0.7" />
-          <rect x="2" y="18" width="12" height="12" rx="2" fill="url(#gridlex-gradient)" opacity="0.7" />
-          <rect x="18" y="18" width="12" height="12" rx="2" fill="url(#gridlex-gradient)" opacity="0.4" />
+          {/* Main grid squares - Navy and Cyan brand colors */}
+          <rect x="2" y="2" width="12" height="12" rx="2" fill="url(#gridlex-gradient-navy)" />
+          <rect x="18" y="2" width="12" height="12" rx="2" fill="url(#gridlex-gradient-cyan)" />
+          <rect x="2" y="18" width="12" height="12" rx="2" fill="url(#gridlex-gradient-cyan)" opacity="0.7" />
+          <rect x="18" y="18" width="12" height="12" rx="2" fill="url(#gridlex-gradient-navy)" opacity="0.7" />
         </svg>
       </div>
       
       {showText && (
-        <span className={`font-bold ${sizeClasses[size].text} text-gradient-primary`}>
-          Gridlex
+        <span className={`font-bold ${sizeClasses[size].text}`}>
+          <span className="text-[#003B5C]">Grid</span>
+          <span className="text-[#1BA9C4]">lex</span>
         </span>
       )}
     </div>

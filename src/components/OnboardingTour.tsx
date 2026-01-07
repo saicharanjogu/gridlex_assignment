@@ -9,10 +9,7 @@ import {
   X, 
   ChevronRight, 
   ChevronLeft,
-  List,
   LayoutGrid,
-  Calendar,
-  Map,
   Filter,
   Settings,
   Sparkles,
@@ -32,34 +29,34 @@ const tourSteps: TourStep[] = [
     id: 'welcome',
     title: 'Welcome to Gridlex',
     description: 'Your unified CRM platform for managing contacts, opportunities, and tasks. Let us show you around!',
-    icon: <Sparkles className="h-6 w-6 text-primary" />,
+    icon: <Sparkles className="h-6 w-6 text-[#1BA9C4]" />,
   },
   {
     id: 'views',
     title: 'Multiple View Types',
     description: 'Switch between Table, Board, Calendar, and Map views to visualize your data in different ways.',
-    icon: <LayoutGrid className="h-6 w-6 text-primary" />,
+    icon: <LayoutGrid className="h-6 w-6 text-[#1BA9C4]" />,
     target: '[data-tour="view-tabs"]',
   },
   {
     id: 'filters',
     title: 'Powerful Filtering',
     description: 'Use filters to narrow down your records. Combine multiple filters for precise results.',
-    icon: <Filter className="h-6 w-6 text-primary" />,
+    icon: <Filter className="h-6 w-6 text-[#1BA9C4]" />,
     target: '[data-tour="filters"]',
   },
   {
     id: 'customize',
     title: 'Customize Your Views',
     description: 'Configure which fields are visible, set default sorting, and save your custom views.',
-    icon: <Settings className="h-6 w-6 text-primary" />,
+    icon: <Settings className="h-6 w-6 text-[#1BA9C4]" />,
     target: '[data-tour="settings"]',
   },
   {
     id: 'ready',
     title: 'You\'re All Set!',
     description: 'Start managing your data with Gridlex. Press ⌘K to search or ? for keyboard shortcuts.',
-    icon: <Zap className="h-6 w-6 text-primary" />,
+    icon: <Zap className="h-6 w-6 text-[#1BA9C4]" />,
   },
 ];
 
@@ -102,12 +99,12 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <Card className="w-full max-w-md mx-4 shadow-2xl border-primary/20">
+      <Card className="w-full max-w-md mx-4 shadow-2xl border-[#1BA9C4]/20">
         <CardHeader className="relative pb-2">
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-[#003B5C]"
             onClick={handleSkip}
           >
             <X className="h-4 w-4" />
@@ -120,17 +117,17 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
           )}
           
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-xl gradient-primary-subtle border border-primary/20 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-[#EBF5FA] border border-[#1BA9C4]/20 flex items-center justify-center">
               {step.icon}
             </div>
             <div>
               <p className="text-xs text-muted-foreground">
                 Step {currentStep + 1} of {tourSteps.length}
               </p>
-              <CardTitle className="text-lg">{step.title}</CardTitle>
+              <CardTitle className="text-lg text-[#003B5C]">{step.title}</CardTitle>
             </div>
           </div>
-          <Progress value={progress} className="h-1 [&>div]:gradient-primary" />
+          <Progress value={progress} className="h-1 [&>div]:bg-[#1BA9C4]" />
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">{step.description}</p>
@@ -149,7 +146,10 @@ export function OnboardingTour({ onComplete }: OnboardingTourProps) {
             <Button variant="outline" onClick={handleSkip}>
               Skip Tour
             </Button>
-            <Button onClick={handleNext} className="gradient-primary border-0 shadow-md shadow-primary/25">
+            <Button 
+              onClick={handleNext} 
+              className="bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0 shadow-md shadow-[#003B5C]/25"
+            >
               {currentStep === tourSteps.length - 1 ? 'Get Started' : 'Next'}
               {currentStep < tourSteps.length - 1 && <ChevronRight className="h-4 w-4 ml-1" />}
             </Button>
