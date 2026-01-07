@@ -7,20 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { MapPin, Search, X, List, Layers } from 'lucide-react';
+import { MapPin, Search, X, List, Layers, Plus } from 'lucide-react';
 import { Record, Contact, Organization, Opportunity, Task } from '@/types';
 
 export function MapView() {
@@ -29,6 +22,8 @@ export function MapView() {
     searchQuery,
     filters,
     getRecordsForCurrentTable,
+    openViewDialog,
+    openCreateDialog,
   } = useApp();
 
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
@@ -117,6 +112,15 @@ export function MapView() {
     return 'bg-primary';
   };
 
+  const handleMarkerClick = (record: Record) => {
+    setSelectedRecord(record);
+  };
+
+  const handleCardClick = (record: Record) => {
+    setSelectedRecord(record);
+    openViewDialog(record);
+  };
+
   const MapPlaceholder = () => (
     <div className="relative w-full h-full bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center overflow-hidden">
       {/* Grid pattern */}
@@ -149,7 +153,8 @@ export function MapView() {
               left: `${Math.min(Math.max(left, 5), 95)}%`,
               top: `${Math.min(Math.max(top, 10), 90)}%`,
             }}
-            onClick={() => setSelectedRecord(record)}
+            onClick={() => handleMarkerClick(record)}
+            onDoubleClick={() => openViewDialog(record)}
           >
             <div className="relative">
               <div className={`w-8 h-8 rounded-full ${getStatusColor(record)} flex items-center justify-center shadow-lg border-2 border-background`}>
@@ -168,6 +173,10 @@ export function MapView() {
           <MapPin className="h-12 w-12 mx-auto mb-4 opacity-30" />
           <p className="text-base font-medium">No locations</p>
           <p className="text-sm">No records with location data found</p>
+          <Button className="mt-4" onClick={openCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Record
+          </Button>
         </div>
       )}
     </div>
@@ -237,11 +246,16 @@ export function MapView() {
         {/* Side Panel */}
         {showList && (
           <div className="w-80 border-l border-border bg-background flex flex-col">
-            <div className="px-4 py-3 border-b border-border">
-              <h3 className="font-semibold">Locations</h3>
-              <p className="text-sm text-muted-foreground">
-                {filteredRecords.length} records with location data
-              </p>
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold">Locations</h3>
+                <p className="text-sm text-muted-foreground">
+                  {filteredRecords.length} records
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={openCreateDialog}>
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
             <ScrollArea className="flex-1">
               <div className="p-2 space-y-1">
@@ -253,7 +267,7 @@ export function MapView() {
                         ? 'ring-2 ring-primary'
                         : 'hover:bg-muted/50'
                     }`}
-                    onClick={() => setSelectedRecord(record)}
+                    onClick={() => handleCardClick(record)}
                   >
                     <CardContent className="p-3 flex items-start gap-3">
                       <div className={`w-6 h-6 rounded-full ${getStatusColor(record)} flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0`}>
@@ -277,129 +291,6 @@ export function MapView() {
             </ScrollArea>
           </div>
         )}
-
-        {/* Record Detail Dialog */}
-        <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{selectedRecord?.name}</DialogTitle>
-            </DialogHeader>
-            {selectedRecord && (
-              <div className="space-y-4 pt-2">
-                <Badge variant="outline" className="capitalize">
-                  {selectedRecord.tableType}
-                </Badge>
-                
-                <Separator />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {selectedRecord.tableType === 'contacts' && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Email</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Contact).email}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Phone</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Contact).phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Organization</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Contact).organization}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Role</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Contact).role}</p>
-                      </div>
-                    </>
-                  )}
-                  {selectedRecord.tableType === 'organizations' && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Industry</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Organization).industry}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Contact</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Organization).contactPerson}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Phone</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Organization).phone}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Organization).status}</p>
-                      </div>
-                    </>
-                  )}
-                  {selectedRecord.tableType === 'opportunities' && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Value</p>
-                        <p className="font-medium text-sm">
-                          {new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: 'USD',
-                            minimumFractionDigits: 0,
-                          }).format((selectedRecord as Opportunity).value)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Stage</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Opportunity).stage}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Assigned To</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Opportunity).assignedTo}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Close Date</p>
-                        <p className="font-medium text-sm">
-                          {new Date((selectedRecord as Opportunity).closeDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                  {selectedRecord.tableType === 'tasks' && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Due Date</p>
-                        <p className="font-medium text-sm">
-                          {new Date((selectedRecord as Task).dueDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Priority</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Task).priority}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Assigned To</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Task).assignedTo}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="font-medium text-sm">{(selectedRecord as Task).status}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {selectedRecord.location && (
-                  <>
-                    <Separator />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Coordinates</p>
-                      <p className="font-medium text-sm">
-                        {selectedRecord.location.lat.toFixed(4)}, {selectedRecord.location.lng.toFixed(4)}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </TooltipProvider>
   );

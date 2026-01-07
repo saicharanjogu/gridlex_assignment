@@ -5,22 +5,16 @@ import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { Record, Task, Opportunity } from '@/types';
 import {
   format,
@@ -47,11 +41,12 @@ export function CalendarView() {
     searchQuery,
     filters,
     getRecordsForCurrentTable,
+    openViewDialog,
+    openCreateDialog,
   } = useApp();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<CalendarViewMode>('month');
-  const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
 
   const records = getRecordsForCurrentTable();
 
@@ -217,7 +212,7 @@ export function CalendarView() {
                 {dayRecords.slice(0, 3).map((record) => (
                   <button
                     key={record.id}
-                    onClick={() => setSelectedRecord(record)}
+                    onClick={() => openViewDialog(record)}
                     className="w-full"
                   >
                     <Badge 
@@ -271,7 +266,7 @@ export function CalendarView() {
                 {dayRecords.map((record) => (
                   <button
                     key={record.id}
-                    onClick={() => setSelectedRecord(record)}
+                    onClick={() => openViewDialog(record)}
                     className="w-full"
                   >
                     <Badge 
@@ -304,7 +299,7 @@ export function CalendarView() {
             <Card
               key={record.id}
               className="cursor-pointer hover:shadow-md transition-all"
-              onClick={() => setSelectedRecord(record)}
+              onClick={() => openViewDialog(record)}
             >
               <CardContent className="p-4 flex items-center gap-4">
                 <Badge variant={getEventVariant(record)} className="h-3 w-3 p-0 rounded-full" />
@@ -323,6 +318,10 @@ export function CalendarView() {
               <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p className="text-base font-medium">No events</p>
               <p className="text-sm">Nothing scheduled for this day</p>
+              <Button className="mt-4" onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Event
+              </Button>
             </div>
           )}
         </div>
@@ -364,13 +363,19 @@ export function CalendarView() {
             </h2>
           </div>
           
-          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as CalendarViewMode)}>
-            <TabsList>
-              <TabsTrigger value="month">Month</TabsTrigger>
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="day">Day</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openCreateDialog}>
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add
+            </Button>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as CalendarViewMode)}>
+              <TabsList>
+                <TabsTrigger value="month">Month</TabsTrigger>
+                <TabsTrigger value="week">Week</TabsTrigger>
+                <TabsTrigger value="day">Day</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
         {/* Calendar Body */}
@@ -379,77 +384,6 @@ export function CalendarView() {
           {viewMode === 'week' && renderWeekView()}
           {viewMode === 'day' && renderDayView()}
         </div>
-
-        {/* Record Detail Dialog */}
-        <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{selectedRecord?.name}</DialogTitle>
-            </DialogHeader>
-            {selectedRecord && (
-              <div className="space-y-4 pt-2">
-                <Badge variant="outline" className="capitalize">
-                  {selectedRecord.tableType}
-                </Badge>
-                
-                <Separator />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  {selectedRecord.tableType === 'tasks' && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Priority</p>
-                        <p className="font-medium">{(selectedRecord as Task).priority}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Status</p>
-                        <p className="font-medium">{(selectedRecord as Task).status}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Assigned To</p>
-                        <p className="font-medium">{(selectedRecord as Task).assignedTo}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Due Date</p>
-                        <p className="font-medium">
-                          {new Date((selectedRecord as Task).dueDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                  {selectedRecord.tableType === 'opportunities' && (
-                    <>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Value</p>
-                        <p className="font-medium">
-                          {new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: 'USD',
-                            minimumFractionDigits: 0,
-                          }).format((selectedRecord as Opportunity).value)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Stage</p>
-                        <p className="font-medium">{(selectedRecord as Opportunity).stage}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Assigned To</p>
-                        <p className="font-medium">{(selectedRecord as Opportunity).assignedTo}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Close Date</p>
-                        <p className="font-medium">
-                          {new Date((selectedRecord as Opportunity).closeDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </TooltipProvider>
   );

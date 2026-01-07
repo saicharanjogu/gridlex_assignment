@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/tooltip';
 import { MoreHorizontal, Edit, Trash2, Eye, Plus, Calendar, DollarSign, GripVertical } from 'lucide-react';
 import { Record, Opportunity, Task, Contact, Organization } from '@/types';
+import { toast } from 'sonner';
 
 interface KanbanColumn {
   id: string;
@@ -38,6 +39,11 @@ export function KanbanView() {
     getRecordsForCurrentTable,
     updateRecord,
     currentUser,
+    openViewDialog,
+    openEditDialog,
+    openDeleteDialog,
+    openCreateDialog,
+    duplicateRecord,
   } = useApp();
 
   const [draggedRecord, setDraggedRecord] = useState<Record | null>(null);
@@ -129,12 +135,14 @@ export function KanbanView() {
     );
   };
 
-  const handleDragStart = (record: Record) => {
+  const handleDragStart = (e: React.DragEvent, record: Record) => {
     setDraggedRecord(record);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent, columnId: string) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
     setDragOverColumn(columnId);
   };
 
@@ -142,12 +150,23 @@ export function KanbanView() {
     setDragOverColumn(null);
   };
 
-  const handleDrop = (columnId: string) => {
+  const handleDrop = (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
     if (draggedRecord && currentUser.permissions.canEditRecords) {
       const groupField = getGroupField();
-      const updatedRecord = { ...draggedRecord, [groupField]: columnId };
-      updateRecord(updatedRecord as Record);
+      const currentValue = (draggedRecord as Record)[groupField as keyof Record];
+      
+      if (currentValue !== columnId) {
+        const updatedRecord = { ...draggedRecord, [groupField]: columnId };
+        updateRecord(updatedRecord as Record);
+        toast.success(`Moved to ${columnId}`);
+      }
     }
+    setDraggedRecord(null);
+    setDragOverColumn(null);
+  };
+
+  const handleDragEnd = () => {
     setDraggedRecord(null);
     setDragOverColumn(null);
   };
@@ -190,22 +209,30 @@ export function KanbanView() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const handleDuplicate = (id: string) => {
+    duplicateRecord(id);
+    toast.success('Record duplicated');
+  };
+
   const renderCard = (record: Record) => {
     const isOpportunity = record.tableType === 'opportunities';
     const isTask = record.tableType === 'tasks';
     const isHovered = hoveredCard === record.id;
     const subtitle = getCardSubtitle(record);
+    const isDragging = draggedRecord?.id === record.id;
 
     return (
       <Card
         key={record.id}
         className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-md ${
-          draggedRecord?.id === record.id ? 'opacity-50 scale-[0.98]' : ''
+          isDragging ? 'opacity-50 scale-[0.98] rotate-2' : ''
         }`}
         draggable={currentUser.permissions.canEditRecords}
-        onDragStart={() => handleDragStart(record)}
+        onDragStart={(e) => handleDragStart(e, record)}
+        onDragEnd={handleDragEnd}
         onMouseEnter={() => setHoveredCard(record.id)}
         onMouseLeave={() => setHoveredCard(null)}
+        onClick={() => openViewDialog(record)}
       >
         <CardContent className="p-3">
           <div className="flex items-start justify-between gap-2 mb-2">
@@ -216,7 +243,7 @@ export function KanbanView() {
               </h4>
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                 <Button 
                   variant="ghost" 
                   size="icon"
@@ -228,20 +255,29 @@ export function KanbanView() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openViewDialog(record); }}>
                   <Eye className="h-4 w-4 mr-2" />
                   View
                 </DropdownMenuItem>
                 {currentUser.permissions.canEditRecords && (
-                  <DropdownMenuItem>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(record.id); }}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Duplicate
+                    </DropdownMenuItem>
+                  </>
                 )}
                 {currentUser.permissions.canDeleteRecords && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={(e) => { e.stopPropagation(); openDeleteDialog([record.id]); }}
+                    >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
                     </DropdownMenuItem>
@@ -314,12 +350,12 @@ export function KanbanView() {
             return (
               <div
                 key={column.id}
-                className={`flex flex-col w-80 flex-shrink-0 rounded-xl bg-background border border-border transition-micro ${
-                  isOver ? 'ring-2 ring-primary ring-offset-2' : ''
+                className={`flex flex-col w-80 flex-shrink-0 rounded-xl bg-background border border-border transition-all ${
+                  isOver ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : ''
                 }`}
                 onDragOver={(e) => handleDragOver(e, column.id)}
                 onDragLeave={handleDragLeave}
-                onDrop={() => handleDrop(column.id)}
+                onDrop={(e) => handleDrop(e, column.id)}
               >
                 <div className="flex items-center justify-between px-3 py-3 border-b border-border">
                   <div className="flex items-center gap-2">
@@ -332,7 +368,12 @@ export function KanbanView() {
                   {currentUser.permissions.canEditRecords && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-7 w-7"
+                          onClick={openCreateDialog}
+                        >
                           <Plus className="h-4 w-4" />
                         </Button>
                       </TooltipTrigger>
@@ -354,7 +395,7 @@ export function KanbanView() {
                     {columnRecords.map((record) => renderCard(record))}
                     {columnRecords.length === 0 && (
                       <div className="text-center py-8 text-muted-foreground text-sm">
-                        No items
+                        {isOver ? 'Drop here' : 'No items'}
                       </div>
                     )}
                   </div>

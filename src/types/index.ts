@@ -23,6 +23,7 @@ export interface FieldConfig {
   visible: boolean;
   sortable: boolean;
   filterable: boolean;
+  required?: boolean;
   options?: string[];
 }
 
@@ -94,6 +95,8 @@ export interface Task extends BaseRecord {
 }
 
 export type Record = Contact | Opportunity | Organization | Task;
+
+export type RecordFormData = Omit<Record, 'id' | 'createdAt' | 'updatedAt'>;
 
 export interface UnifiedRecord {
   id: string;

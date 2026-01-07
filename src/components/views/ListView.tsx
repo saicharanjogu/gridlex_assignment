@@ -30,6 +30,7 @@ import {
 import { ArrowUp, ArrowDown, MoreHorizontal, Edit, Trash2, Eye, Copy, ExternalLink } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
 import { Record } from '@/types';
+import { toast } from 'sonner';
 
 export function ListView() {
   const {
@@ -39,13 +40,21 @@ export function ListView() {
     selectedRecords,
     toggleRecordSelection,
     setSelectedRecords,
+    selectAllRecords,
+    clearSelection,
     getRecordsForCurrentTable,
     currentUser,
+    openViewDialog,
+    openEditDialog,
+    openDeleteDialog,
+    duplicateRecord,
+    updateRecord,
   } = useApp();
 
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingCell, setEditingCell] = useState<{ recordId: string; field: string } | null>(null);
+  const [editValue, setEditValue] = useState('');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const fields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
@@ -110,10 +119,22 @@ export function ListView() {
 
   const handleSelectAll = () => {
     if (selectedRecords.length === filteredRecords.length) {
-      setSelectedRecords([]);
+      clearSelection();
     } else {
-      setSelectedRecords(filteredRecords.map((r) => r.id));
+      selectAllRecords(filteredRecords.map((r) => r.id));
     }
+  };
+
+  const handleInlineEdit = (record: Record, field: string, value: string) => {
+    const updatedRecord = { ...record, [field]: value };
+    updateRecord(updatedRecord);
+    setEditingCell(null);
+    toast.success('Record updated');
+  };
+
+  const handleDuplicate = (id: string) => {
+    duplicateRecord(id);
+    toast.success('Record duplicated');
   };
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -167,16 +188,36 @@ export function ListView() {
             <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8"
+                    onClick={() => {
+                      if (selectedRecords.length === 1) {
+                        const record = filteredRecords.find(r => r.id === selectedRecords[0]);
+                        if (record) openEditDialog(record);
+                      }
+                    }}
+                    disabled={selectedRecords.length !== 1}
+                  >
                     <Edit className="h-4 w-4 mr-1.5" />
                     Edit
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Edit selected records</TooltipContent>
+                <TooltipContent>Edit selected record</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8"
+                    onClick={() => {
+                      selectedRecords.forEach(id => duplicateRecord(id));
+                      toast.success(`${selectedRecords.length} record(s) duplicated`);
+                      clearSelection();
+                    }}
+                  >
                     <Copy className="h-4 w-4 mr-1.5" />
                     Duplicate
                   </Button>
@@ -186,7 +227,12 @@ export function ListView() {
               {currentUser.permissions.canDeleteRecords && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 text-destructive hover:text-destructive"
+                      onClick={() => openDeleteDialog(selectedRecords)}
+                    >
                       <Trash2 className="h-4 w-4 mr-1.5" />
                       Delete
                     </Button>
@@ -246,8 +292,9 @@ export function ListView() {
                   }`}
                   onMouseEnter={() => setHoveredRow(record.id)}
                   onMouseLeave={() => setHoveredRow(null)}
+                  onDoubleClick={() => openViewDialog(record)}
                 >
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedRecords.includes(record.id)}
                       onCheckedChange={() => toggleRecordSelection(record.id)}
@@ -268,19 +315,26 @@ export function ListView() {
                     return (
                       <TableCell
                         key={field.key}
-                        onDoubleClick={() => {
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
                           if (currentUser.permissions.canEditRecords && !isStatusField) {
                             setEditingCell({ recordId: record.id, field: field.key });
+                            setEditValue(String(value || ''));
                           }
                         }}
                       >
                         {isEditing ? (
                           <Input
-                            defaultValue={String(value || '')}
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
                             autoFocus
-                            onBlur={() => setEditingCell(null)}
+                            onBlur={() => {
+                              handleInlineEdit(record, field.key, editValue);
+                            }}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === 'Escape') {
+                              if (e.key === 'Enter') {
+                                handleInlineEdit(record, field.key, editValue);
+                              } else if (e.key === 'Escape') {
                                 setEditingCell(null);
                               }
                             }}
@@ -298,7 +352,7 @@ export function ListView() {
                       </TableCell>
                     );
                   })}
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 
@@ -312,22 +366,18 @@ export function ListView() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openViewDialog(record)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Open in new tab
                         </DropdownMenuItem>
                         {currentUser.permissions.canEditRecords && (
                           <>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditDialog(record)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicate(record.id)}>
                               <Copy className="h-4 w-4 mr-2" />
                               Duplicate
                             </DropdownMenuItem>
@@ -336,7 +386,10 @@ export function ListView() {
                         {currentUser.permissions.canDeleteRecords && (
                           <>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive">
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => openDeleteDialog([record.id])}
+                            >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
                             </DropdownMenuItem>

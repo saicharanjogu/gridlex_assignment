@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,8 +30,10 @@ import {
   Filter,
   Download,
   SlidersHorizontal,
+  X,
 } from 'lucide-react';
 import { ViewType, TableType } from '@/types';
+import { ExportDialog } from '@/components/dialogs/ExportDialog';
 
 export function Header() {
   const {
@@ -43,7 +45,10 @@ export function Header() {
     setCurrentTable,
     setSearchQuery,
     filters,
+    openCreateDialog,
   } = useApp();
+
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
   const viewOptions: { value: ViewType; label: string; icon: React.ReactNode }[] = [
     { value: 'list', label: 'Table', icon: <List className="h-4 w-4" /> },
@@ -113,8 +118,18 @@ export function Header() {
                 placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] lg:w-[280px] h-9 pl-9 bg-muted/50 border-0 focus-visible:ring-1"
+                className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1"
               />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => setSearchQuery('')}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
             </div>
 
             <Separator orientation="vertical" className="h-6 hidden sm:block" />
@@ -134,39 +149,30 @@ export function Header() {
               <TooltipContent>Filter records</TooltipContent>
             </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>View settings</TooltipContent>
-            </Tooltip>
+            {currentUser.permissions.canExport && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9"
+                    onClick={() => setExportDialogOpen(true)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Export</TooltipContent>
+              </Tooltip>
+            )}
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Export</TooltipContent>
-            </Tooltip>
-
-            <Button size="sm" className="h-9 gap-2">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">New Record</span>
-            </Button>
+            {currentUser.permissions.canEditRecords && (
+              <Button size="sm" className="h-9 gap-2" onClick={openCreateDialog}>
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">New Record</span>
+              </Button>
+            )}
 
             <Separator orientation="vertical" className="h-6" />
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Settings</TooltipContent>
-            </Tooltip>
 
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-xs font-medium text-primary-foreground cursor-pointer">
               {currentUser.name.charAt(0)}
@@ -174,6 +180,8 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
     </TooltipProvider>
   );
 }
