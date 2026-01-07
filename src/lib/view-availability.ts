@@ -20,7 +20,7 @@ export const viewConfigs: ViewConfig[] = [
 ];
 
 export function getViewAvailability(
-  tableType: TableType,
+  tableType: TableType | 'unified',
   viewType: ViewType
 ): ViewAvailability {
   // List view is always available for all tables
@@ -29,7 +29,7 @@ export function getViewAvailability(
   }
 
   // Define availability rules for each table type
-  const availabilityRules: Record<TableType, Record<ViewType, ViewAvailability>> = {
+  const availabilityRules: Record<TableType | 'unified', Record<ViewType, ViewAvailability>> = {
     contacts: {
       list: { available: true },
       kanban: {
@@ -96,18 +96,33 @@ export function getViewAvailability(
         suggestion: 'Tasks don\'t have geographic fields. Consider adding a location field for field tasks.',
       },
     },
+    unified: {
+      list: { available: true },
+      kanban: {
+        available: true,
+        reason: 'View all records with status/stage fields in a board format.',
+      },
+      calendar: {
+        available: true,
+        reason: 'View all date-based records on a timeline.',
+      },
+      map: {
+        available: true,
+        reason: 'View all records with location data on a map.',
+      },
+    },
   };
 
   return availabilityRules[tableType][viewType];
 }
 
-export function getAvailableViews(tableType: TableType): ViewType[] {
+export function getAvailableViews(tableType: TableType | 'unified'): ViewType[] {
   return viewConfigs
     .filter(config => getViewAvailability(tableType, config.type).available)
     .map(config => config.type);
 }
 
-export function getFirstAvailableView(tableType: TableType, currentView: ViewType): ViewType {
+export function getFirstAvailableView(tableType: TableType | 'unified', currentView: ViewType): ViewType {
   const availability = getViewAvailability(tableType, currentView);
   if (availability.available) {
     return currentView;

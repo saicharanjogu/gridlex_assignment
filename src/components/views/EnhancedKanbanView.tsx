@@ -281,7 +281,7 @@ export function EnhancedKanbanView() {
     const groupField = getGroupField();
     const newRecord: Partial<Record> = {
       name: quickAddValue,
-      tableType: currentTable,
+      tableType: currentTable === 'unified' ? 'tasks' : currentTable,
       [groupField]: columnId,
     };
     

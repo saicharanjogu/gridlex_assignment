@@ -26,7 +26,7 @@ import { getViewAvailability, viewConfigs } from '@/lib/view-availability';
 
 interface ViewSelectorProps {
   currentView: ViewType;
-  currentTable: TableType;
+  currentTable: TableType | 'unified';
   onViewChange: (view: ViewType) => void;
 }
 

@@ -7,7 +7,7 @@ import { mockUser, mockContacts, mockOpportunities, mockOrganizations, mockTasks
 interface AppState {
   currentUser: User;
   currentView: ViewType;
-  currentTable: TableType;
+  currentTable: TableType | 'unified';
   viewConfigs: ViewConfig[];
   activeViewConfig: ViewConfig | null;
   searchQuery: string;
@@ -24,7 +24,7 @@ interface AppState {
 
 interface AppContextType extends AppState {
   setCurrentView: (view: ViewType) => void;
-  setCurrentTable: (table: TableType) => void;
+  setCurrentTable: (table: TableType | 'unified') => void;
   setSearchQuery: (query: string) => void;
   setFilters: (filters: Filter[]) => void;
   addFilter: (filter: Filter) => void;
@@ -64,7 +64,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser] = useState<User>(mockUser);
   const [currentView, setCurrentView] = useState<ViewType>('list');
-  const [currentTable, setCurrentTable] = useState<TableType>('contacts');
+  const [currentTable, setCurrentTable] = useState<TableType | 'unified'>('contacts');
   const [viewConfigs, setViewConfigs] = useState<ViewConfig[]>(defaultViewConfigs);
   const [activeViewConfig, setActiveViewConfig] = useState<ViewConfig | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -137,6 +137,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return organizations;
       case 'tasks':
         return tasks;
+      case 'unified':
+        return [...contacts, ...opportunities, ...organizations, ...tasks];
       default:
         return [];
     }

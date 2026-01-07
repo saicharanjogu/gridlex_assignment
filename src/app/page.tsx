@@ -32,7 +32,6 @@ function AppContent() {
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -40,19 +39,7 @@ function AppContent() {
     if (!onboardingCompleted) {
       setShowOnboarding(true);
     }
-    
-    // Check for saved sidebar state
-    const savedSidebarState = localStorage.getItem('sidebar-collapsed');
-    if (savedSidebarState) {
-      setSidebarCollapsed(savedSidebarState === 'true');
-    }
   }, []);
-
-  const handleToggleSidebar = () => {
-    const newState = !sidebarCollapsed;
-    setSidebarCollapsed(newState);
-    localStorage.setItem('sidebar-collapsed', String(newState));
-  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -87,27 +74,20 @@ function AppContent() {
             e.preventDefault();
             setCurrentView('map');
             break;
-          case 'b':
-            e.preventDefault();
-            handleToggleSidebar();
-            break;
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openCreateDialog, setCurrentView, sidebarCollapsed]);
+  }, [openCreateDialog, setCurrentView]);
 
   return (
     <>
       <div className="flex flex-col h-screen bg-background">
         <Header />
         <div className="flex flex-1 overflow-hidden">
-          <Sidebar 
-            collapsed={sidebarCollapsed} 
-            onToggleCollapse={handleToggleSidebar} 
-          />
+          <Sidebar />
           <main className="flex-1 overflow-hidden">
             <ViewContainer />
           </main>
@@ -130,7 +110,7 @@ function AppContent() {
         mode="create"
         open={isCreateDialogOpen}
         onClose={closeCreateDialog}
-        tableType={currentTable}
+        tableType={currentTable === 'unified' ? 'contacts' : currentTable}
       />
 
       {/* Edit Dialog */}

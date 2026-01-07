@@ -31,7 +31,7 @@ export interface ViewConfig {
   id: string;
   name: string;
   type: ViewType;
-  tableType: TableType;
+  tableType: TableType | 'unified';
   visibleFields: string[];
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -97,3 +97,9 @@ export interface Task extends BaseRecord {
 export type Record = Contact | Opportunity | Organization | Task;
 
 export type RecordFormData = Omit<Record, 'id' | 'createdAt' | 'updatedAt'>;
+
+export interface UnifiedRecord {
+  id: string;
+  tableType: TableType;
+  record: Record;
+}

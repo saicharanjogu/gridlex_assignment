@@ -80,7 +80,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
 
   useEffect(() => {
     if (open) {
-      const tableFields = getFieldsForTable(currentTable);
+      const tableFields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
       setFields(tableFields.map((f, i) => ({ ...f, visible: f.visible, order: i })));
       setViewType(currentView);
       setViewName(activeViewConfig?.name || `New ${currentView} View`);
@@ -122,7 +122,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
       id: activeViewConfig?.id || Math.random().toString(36).substr(2, 9),
       name: viewName,
       type: viewType,
-      tableType: currentTable,
+      tableType: currentTable === 'unified' ? 'unified' : currentTable,
       visibleFields: fields.filter(f => f.visible).map(f => f.key),
       sortBy: defaultSort === 'none' ? undefined : defaultSort,
       sortOrder: sortOrder,

@@ -4,48 +4,59 @@ import React from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Keyboard } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 interface KeyboardShortcutsProps {
   open: boolean;
   onClose: () => void;
 }
 
-const shortcutGroups = [
+interface ShortcutGroup {
+  title: string;
+  shortcuts: { keys: string[]; description: string }[];
+}
+
+const shortcutGroups: ShortcutGroup[] = [
   {
     title: 'Navigation',
     shortcuts: [
-      { keys: ['⌘', 'K'], description: 'Search' },
-      { keys: ['⌘', '1-4'], description: 'Switch views' },
-      { keys: ['⌘', 'B'], description: 'Toggle sidebar' },
+      { keys: ['⌘', 'K'], description: 'Open search' },
+      { keys: ['⌘', '1'], description: 'Switch to List view' },
+      { keys: ['⌘', '2'], description: 'Switch to Kanban view' },
+      { keys: ['⌘', '3'], description: 'Switch to Calendar view' },
+      { keys: ['⌘', '4'], description: 'Switch to Map view' },
     ],
   },
   {
     title: 'Records',
     shortcuts: [
-      { keys: ['⌘', 'N'], description: 'New record' },
-      { keys: ['⌘', 'E'], description: 'Edit' },
-      { keys: ['⌘', 'D'], description: 'Duplicate' },
-      { keys: ['Del'], description: 'Delete' },
+      { keys: ['⌘', 'N'], description: 'Create new record' },
+      { keys: ['⌘', 'E'], description: 'Edit selected record' },
+      { keys: ['⌘', 'D'], description: 'Duplicate selected record' },
+      { keys: ['Delete'], description: 'Delete selected records' },
+      { keys: ['Escape'], description: 'Clear selection' },
     ],
   },
   {
     title: 'Table',
     shortcuts: [
-      { keys: ['⌘', 'A'], description: 'Select all' },
-      { keys: ['↑↓'], description: 'Navigate' },
-      { keys: ['Enter'], description: 'Open' },
-      { keys: ['Space'], description: 'Select' },
+      { keys: ['⌘', 'A'], description: 'Select all records' },
+      { keys: ['↑', '↓'], description: 'Navigate rows' },
+      { keys: ['Enter'], description: 'Open record details' },
+      { keys: ['Space'], description: 'Toggle row selection' },
     ],
   },
   {
     title: 'General',
     shortcuts: [
-      { keys: ['⌘', 'S'], description: 'Save view' },
-      { keys: ['?'], description: 'Shortcuts' },
+      { keys: ['⌘', 'S'], description: 'Save current view' },
+      { keys: ['⌘', 'Shift', 'E'], description: 'Export data' },
+      { keys: ['?'], description: 'Show keyboard shortcuts' },
     ],
   },
 ];
@@ -53,49 +64,48 @@ const shortcutGroups = [
 export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[700px] max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <Keyboard className="h-5 w-5 text-primary" />
-            <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          </div>
+          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          <DialogDescription>
+            Use these shortcuts to navigate and manage records faster.
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-4 pt-2">
-          {shortcutGroups.map((group) => (
-            <div key={group.title}>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                {group.title}
-              </h3>
-              <div className="space-y-1.5">
-                {group.shortcuts.map((shortcut) => (
-                  <div
-                    key={shortcut.description}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-muted-foreground">{shortcut.description}</span>
-                    <div className="flex items-center gap-0.5">
-                      {shortcut.keys.map((key, i) => (
-                        <React.Fragment key={`${shortcut.description}-${key}-${i}`}>
-                          <kbd className="px-1.5 py-0.5 text-[10px] font-medium bg-muted border rounded">
-                            {key}
-                          </kbd>
-                          {i < shortcut.keys.length - 1 && (
-                            <span className="text-muted-foreground/50 text-xs">+</span>
-                          )}
-                        </React.Fragment>
-                      ))}
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-6 py-4">
+            {shortcutGroups.map((group, index) => (
+              <div key={group.title}>
+                {index > 0 && <Separator className="mb-4" />}
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                  {group.title}
+                </h4>
+                <div className="space-y-2">
+                  {group.shortcuts.map((shortcut) => (
+                    <div
+                      key={shortcut.description}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-sm">{shortcut.description}</span>
+                      <div className="flex items-center gap-1">
+                        {shortcut.keys.map((key, i) => (
+                          <React.Fragment key={key}>
+                            <kbd className="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded">
+                              {key}
+                            </kbd>
+                            {i < shortcut.keys.length - 1 && (
+                              <span className="text-muted-foreground">+</span>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-        
-        <p className="text-[11px] text-muted-foreground text-center pt-2 border-t">
-          Use <kbd className="px-1 py-0.5 text-[10px] bg-muted border rounded">Ctrl</kbd> on Windows/Linux
-        </p>
+            ))}
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
