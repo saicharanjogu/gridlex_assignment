@@ -32,6 +32,7 @@ import {
   Download,
   X,
   Bell,
+  HelpCircle,
 } from 'lucide-react';
 import { ViewType, TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
@@ -55,10 +56,10 @@ export function Header() {
   const [viewConfigOpen, setViewConfigOpen] = useState(false);
 
   const viewOptions: { value: ViewType; label: string; icon: React.ReactNode }[] = [
-    { value: 'list', label: 'Table', icon: <List className="h-4 w-4" aria-hidden="true" /> },
-    { value: 'kanban', label: 'Board', icon: <LayoutGrid className="h-4 w-4" aria-hidden="true" /> },
-    { value: 'calendar', label: 'Calendar', icon: <Calendar className="h-4 w-4" aria-hidden="true" /> },
-    { value: 'map', label: 'Map', icon: <Map className="h-4 w-4" aria-hidden="true" /> },
+    { value: 'list', label: 'Table', icon: <List className="h-4 w-4" /> },
+    { value: 'kanban', label: 'Board', icon: <LayoutGrid className="h-4 w-4" /> },
+    { value: 'calendar', label: 'Calendar', icon: <Calendar className="h-4 w-4" /> },
+    { value: 'map', label: 'Map', icon: <Map className="h-4 w-4" /> },
   ];
 
   const tableOptions: { value: TableType | 'unified'; label: string }[] = [
@@ -71,25 +72,16 @@ export function Header() {
 
   return (
     <TooltipProvider>
-      <header 
-        className="border-b border-border bg-background"
-        role="banner"
-      >
+      <header className="border-b border-border bg-background">
         <div className="h-14 flex items-center justify-between px-4 gap-4">
           {/* Left section */}
           <div className="flex items-center gap-4">
             <GridlexLogo />
             
-            <Separator orientation="vertical" className="h-6" aria-hidden="true" />
+            <Separator orientation="vertical" className="h-6" />
             
-            <Select 
-              value={currentTable} 
-              onValueChange={(v) => setCurrentTable(v as TableType | 'unified')}
-            >
-              <SelectTrigger 
-                className="w-[160px] h-9 border-0 bg-transparent font-medium hover:bg-muted/50 transition-colors"
-                aria-label="Select data table"
-              >
+            <Select value={currentTable} onValueChange={(v) => setCurrentTable(v as TableType | 'unified')}>
+              <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent font-medium hover:bg-muted/50 transition-colors">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -103,42 +95,30 @@ export function Header() {
           </div>
 
           {/* Center section - View tabs */}
-          <nav aria-label="View type navigation">
-            <Tabs 
-              value={currentView} 
-              onValueChange={(v) => setCurrentView(v as ViewType)} 
-              className="hidden md:block"
-            >
-              <TabsList className="bg-muted/50 p-1" aria-label="Select view type">
-                {viewOptions.map((option) => (
-                  <TabsTrigger 
-                    key={option.value} 
-                    value={option.value}
-                    className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm px-4"
-                    aria-label={`${option.label} view`}
-                  >
-                    {option.icon}
-                    <span className="hidden lg:inline">{option.label}</span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-          </nav>
+          <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as ViewType)} className="hidden md:block">
+            <TabsList className="bg-muted/50 p-1">
+              {viewOptions.map((option) => (
+                <TabsTrigger 
+                  key={option.value} 
+                  value={option.value}
+                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm px-4"
+                >
+                  {option.icon}
+                  <span className="hidden lg:inline">{option.label}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           {/* Right section */}
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search 
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" 
-                aria-hidden="true" 
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                type="search"
                 placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
-                aria-label="Search records"
               />
               {searchQuery && (
                 <Button
@@ -146,27 +126,21 @@ export function Header() {
                   size="icon"
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
                   onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
                 >
-                  <X className="h-3 w-3" aria-hidden="true" />
+                  <X className="h-3 w-3" />
                 </Button>
               )}
             </div>
 
-            <Separator orientation="vertical" className="h-6 hidden sm:block" aria-hidden="true" />
+            <Separator orientation="vertical" className="h-6 hidden sm:block" />
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-9 gap-2 text-muted-foreground hover:text-foreground"
-                  aria-label={`Filter records${filters.length > 0 ? `, ${filters.length} active filters` : ''}`}
-                >
-                  <Filter className="h-4 w-4" aria-hidden="true" />
+                <Button variant="ghost" size="sm" className="h-9 gap-2 text-muted-foreground hover:text-foreground">
+                  <Filter className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                   {filters.length > 0 && (
-                    <Badge className="ml-1 px-1.5 py-0.5 text-xs gradient-primary border-0" aria-hidden="true">
+                    <Badge className="ml-1 px-1.5 py-0.5 text-xs gradient-primary border-0">
                       {filters.length}
                     </Badge>
                   )}
@@ -183,9 +157,8 @@ export function Header() {
                     size="icon" 
                     className="h-9 w-9 text-muted-foreground hover:text-foreground"
                     onClick={() => setViewConfigOpen(true)}
-                    aria-label="Configure view settings"
                   >
-                    <Settings className="h-4 w-4" aria-hidden="true" />
+                    <Settings className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Configure view</TooltipContent>
@@ -200,9 +173,8 @@ export function Header() {
                     size="icon" 
                     className="h-9 w-9 text-muted-foreground hover:text-foreground"
                     onClick={() => setExportDialogOpen(true)}
-                    aria-label="Export data"
                   >
-                    <Download className="h-4 w-4" aria-hidden="true" />
+                    <Download className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Export</TooltipContent>
@@ -215,50 +187,35 @@ export function Header() {
                   variant="ghost" 
                   size="icon" 
                   className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
-                  aria-label="Notifications, 1 unread"
                 >
-                  <Bell className="h-4 w-4" aria-hidden="true" />
-                  <span 
-                    className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" 
-                    aria-hidden="true" 
-                  />
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Notifications</TooltipContent>
             </Tooltip>
 
             {currentUser.permissions.canEditRecords && (
-              <Button 
-                size="sm" 
-                className="h-9 gap-2 gradient-primary border-0 shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all" 
-                onClick={openCreateDialog}
-                aria-label="Create new record"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
+              <Button size="sm" className="h-9 gap-2 gradient-primary border-0 shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all" onClick={openCreateDialog}>
+                <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">New Record</span>
               </Button>
             )}
 
-            <Separator orientation="vertical" className="h-6" aria-hidden="true" />
+            <Separator orientation="vertical" className="h-6" />
 
             {/* User Menu */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <button 
-                  className="flex items-center gap-2 cursor-pointer group p-1 rounded-md hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  aria-label={`User menu for ${currentUser.name}, role: ${currentUser.role}`}
-                >
-                  <div 
-                    className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-semibold text-white shadow-md shadow-primary/25"
-                    aria-hidden="true"
-                  >
+                <div className="flex items-center gap-2 cursor-pointer group">
+                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-semibold text-white shadow-md shadow-primary/25">
                     {currentUser.name.charAt(0)}
                   </div>
-                  <div className="hidden lg:block text-left">
+                  <div className="hidden lg:block">
                     <p className="text-sm font-medium leading-none">{currentUser.name}</p>
                     <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
                   </div>
-                </button>
+                </div>
               </TooltipTrigger>
               <TooltipContent>
                 <div className="text-center">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   AlertDialog,
@@ -23,14 +23,6 @@ interface DeleteConfirmDialogProps {
 
 export function DeleteConfirmDialog({ open, onClose, recordIds }: DeleteConfirmDialogProps) {
   const { deleteRecords, getRecordById } = useApp();
-  const cancelRef = useRef<HTMLButtonElement>(null);
-
-  // Focus the cancel button when dialog opens for safety
-  useEffect(() => {
-    if (open && cancelRef.current) {
-      setTimeout(() => cancelRef.current?.focus(), 0);
-    }
-  }, [open]);
 
   const handleDelete = () => {
     deleteRecords(recordIds);
@@ -43,20 +35,17 @@ export function DeleteConfirmDialog({ open, onClose, recordIds }: DeleteConfirmD
 
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
-      <AlertDialogContent role="alertdialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-description">
+      <AlertDialogContent>
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center"
-              aria-hidden="true"
-            >
+            <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
               <Trash2 className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <AlertDialogTitle id="delete-dialog-title">
+              <AlertDialogTitle>
                 Delete {recordCount === 1 ? 'Record' : `${recordCount} Records`}
               </AlertDialogTitle>
-              <AlertDialogDescription id="delete-dialog-description" className="mt-1">
+              <AlertDialogDescription className="mt-1">
                 {recordCount === 1 && firstRecord
                   ? `Are you sure you want to delete "${firstRecord.name}"?`
                   : `Are you sure you want to delete ${recordCount} records?`}
@@ -66,11 +55,10 @@ export function DeleteConfirmDialog({ open, onClose, recordIds }: DeleteConfirmD
           </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel ref={cancelRef}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            aria-label={`Confirm deletion of ${recordCount} record${recordCount > 1 ? 's' : ''}`}
           >
             Delete
           </AlertDialogAction>

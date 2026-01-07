@@ -66,199 +66,72 @@ export function RecordViewDialog({ open, onClose, record }: RecordViewDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent 
-        className="sm:max-w-[550px]"
-        aria-describedby="record-details-description"
-      >
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle id="record-title">{record.name}</DialogTitle>
-          <DialogDescription id="record-details-description" className="flex items-center gap-2 mt-1">
+          <DialogTitle className="text-xl">{record.name}</DialogTitle>
+          <DialogDescription className="flex items-center gap-2 mt-1">
             <Badge variant="outline" className="capitalize">{record.tableType.slice(0, -1)}</Badge>
             <Badge variant={getStatusVariant(getStatus())}>{getStatus()}</Badge>
           </DialogDescription>
         </DialogHeader>
         
-        <Separator aria-hidden="true" />
+        <Separator />
         
-        <div className="space-y-4" role="region" aria-label="Record details">
-          <dl className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             {record.tableType === 'contacts' && (
               <>
-                <div className="flex items-start gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Email</dt>
-                    <dd className="font-medium">
-                      <a href={`mailto:${(record as Contact).email}`} className="hover:underline focus:underline">
-                        {(record as Contact).email}
-                      </a>
-                    </dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Phone</dt>
-                    <dd className="font-medium">
-                      <a href={`tel:${(record as Contact).phone}`} className="hover:underline focus:underline">
-                        {(record as Contact).phone}
-                      </a>
-                    </dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Organization</dt>
-                    <dd className="font-medium">{(record as Contact).organization}</dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <User className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Role</dt>
-                    <dd className="font-medium">{(record as Contact).role}</dd>
-                  </div>
-                </div>
+                <div className="flex items-start gap-3"><Mail className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Email</p><p className="font-medium">{(record as Contact).email}</p></div></div>
+                <div className="flex items-start gap-3"><Phone className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Phone</p><p className="font-medium">{(record as Contact).phone}</p></div></div>
+                <div className="flex items-start gap-3"><Building2 className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Organization</p><p className="font-medium">{(record as Contact).organization}</p></div></div>
+                <div className="flex items-start gap-3"><User className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Role</p><p className="font-medium">{(record as Contact).role}</p></div></div>
               </>
             )}
             {record.tableType === 'opportunities' && (
               <>
-                <div className="flex items-start gap-3">
-                  <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Value</dt>
-                    <dd className="font-medium text-lg">{formatCurrency((record as Opportunity).value)}</dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Flag className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Stage</dt>
-                    <dd><Badge variant={getStatusVariant((record as Opportunity).stage)}>{(record as Opportunity).stage}</Badge></dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Close Date</dt>
-                    <dd className="font-medium"><time dateTime={(record as Opportunity).closeDate}>{formatDate((record as Opportunity).closeDate)}</time></dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <User className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Assigned To</dt>
-                    <dd className="font-medium">{(record as Opportunity).assignedTo}</dd>
-                  </div>
-                </div>
+                <div className="flex items-start gap-3"><DollarSign className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Value</p><p className="font-medium text-lg">{formatCurrency((record as Opportunity).value)}</p></div></div>
+                <div className="flex items-start gap-3"><Flag className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Stage</p><Badge variant={getStatusVariant((record as Opportunity).stage)}>{(record as Opportunity).stage}</Badge></div></div>
+                <div className="flex items-start gap-3"><Calendar className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Close Date</p><p className="font-medium">{formatDate((record as Opportunity).closeDate)}</p></div></div>
+                <div className="flex items-start gap-3"><User className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Assigned To</p><p className="font-medium">{(record as Opportunity).assignedTo}</p></div></div>
               </>
             )}
             {record.tableType === 'organizations' && (
               <>
-                <div className="flex items-start gap-3">
-                  <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Industry</dt>
-                    <dd className="font-medium">{(record as Organization).industry}</dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <User className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Contact Person</dt>
-                    <dd className="font-medium">{(record as Organization).contactPerson}</dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Phone</dt>
-                    <dd className="font-medium">
-                      <a href={`tel:${(record as Organization).phone}`} className="hover:underline focus:underline">
-                        {(record as Organization).phone}
-                      </a>
-                    </dd>
-                  </div>
-                </div>
+                <div className="flex items-start gap-3"><Building2 className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Industry</p><p className="font-medium">{(record as Organization).industry}</p></div></div>
+                <div className="flex items-start gap-3"><User className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Contact Person</p><p className="font-medium">{(record as Organization).contactPerson}</p></div></div>
+                <div className="flex items-start gap-3"><Phone className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Phone</p><p className="font-medium">{(record as Organization).phone}</p></div></div>
               </>
             )}
             {record.tableType === 'tasks' && (
               <>
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Due Date</dt>
-                    <dd className="font-medium"><time dateTime={(record as Task).dueDate}>{formatDate((record as Task).dueDate)}</time></dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Flag className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Priority</dt>
-                    <dd><Badge variant={getStatusVariant((record as Task).priority)}>{(record as Task).priority}</Badge></dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <User className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Assigned To</dt>
-                    <dd className="font-medium">{(record as Task).assignedTo}</dd>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="h-4 w-4 text-muted-foreground mt-0.5" aria-hidden="true" />
-                  <div>
-                    <dt className="text-sm text-muted-foreground">Status</dt>
-                    <dd><Badge variant={getStatusVariant((record as Task).status)}>{(record as Task).status}</Badge></dd>
-                  </div>
-                </div>
+                <div className="flex items-start gap-3"><Calendar className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Due Date</p><p className="font-medium">{formatDate((record as Task).dueDate)}</p></div></div>
+                <div className="flex items-start gap-3"><Flag className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Priority</p><Badge variant={getStatusVariant((record as Task).priority)}>{(record as Task).priority}</Badge></div></div>
+                <div className="flex items-start gap-3"><User className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Assigned To</p><p className="font-medium">{(record as Task).assignedTo}</p></div></div>
+                <div className="flex items-start gap-3"><Clock className="h-4 w-4 text-muted-foreground mt-0.5" /><div><p className="text-sm text-muted-foreground">Status</p><Badge variant={getStatusVariant((record as Task).status)}>{(record as Task).status}</Badge></div></div>
               </>
             )}
-          </dl>
+          </div>
         </div>
         
-        <Separator aria-hidden="true" />
+        <Separator />
         
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span>Created: <time dateTime={record.createdAt}>{formatDate(record.createdAt)}</time></span>
-          <span>Updated: <time dateTime={record.updatedAt}>{formatDate(record.updatedAt)}</time></span>
+          <span>Created: {formatDate(record.createdAt)}</span>
+          <span>Updated: {formatDate(record.updatedAt)}</span>
         </div>
 
         <DialogFooter className="flex-row justify-between sm:justify-between">
           <div className="flex gap-2">
             {currentUser.permissions.canDeleteRecords && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleDelete} 
-                className="text-destructive hover:text-destructive"
-                aria-label={`Delete ${record.name}`}
-              >
-                <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                Delete
+              <Button variant="outline" size="sm" onClick={handleDelete} className="text-destructive hover:text-destructive">
+                <Trash2 className="h-4 w-4 mr-1.5" />Delete
               </Button>
             )}
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleDuplicate}
-              aria-label={`Duplicate ${record.name}`}
-            >
-              <Copy className="h-4 w-4 mr-1.5" aria-hidden="true" />
-              Duplicate
-            </Button>
+            <Button variant="outline" size="sm" onClick={handleDuplicate}><Copy className="h-4 w-4 mr-1.5" />Duplicate</Button>
             {currentUser.permissions.canEditRecords && (
-              <Button 
-                size="sm" 
-                onClick={handleEdit}
-                aria-label={`Edit ${record.name}`}
-              >
-                <Edit className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                Edit
-              </Button>
+              <Button size="sm" onClick={handleEdit}><Edit className="h-4 w-4 mr-1.5" />Edit</Button>
             )}
           </div>
         </DialogFooter>

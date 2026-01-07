@@ -11,7 +11,6 @@ import { DeleteConfirmDialog } from '@/components/dialogs/DeleteConfirmDialog';
 import { RecordViewDialog } from '@/components/dialogs/RecordViewDialog';
 import { OnboardingTour } from '@/components/OnboardingTour';
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
-import { LiveRegion } from '@/components/LiveRegion';
 
 function AppContent() {
   const {
@@ -33,7 +32,6 @@ function AppContent() {
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
-  const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -59,27 +57,22 @@ function AppContent() {
           case 'n':
             e.preventDefault();
             openCreateDialog();
-            setAnnouncement('Create new record dialog opened');
             break;
           case '1':
             e.preventDefault();
             setCurrentView('list');
-            setAnnouncement('Switched to table view');
             break;
           case '2':
             e.preventDefault();
             setCurrentView('kanban');
-            setAnnouncement('Switched to board view');
             break;
           case '3':
             e.preventDefault();
             setCurrentView('calendar');
-            setAnnouncement('Switched to calendar view');
             break;
           case '4':
             e.preventDefault();
             setCurrentView('map');
-            setAnnouncement('Switched to map view');
             break;
         }
       }
@@ -95,19 +88,11 @@ function AppContent() {
         <Header />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
-          <main 
-            id="main-content" 
-            className="flex-1 overflow-hidden"
-            role="main"
-            aria-label={`${currentTable} data view`}
-          >
+          <main className="flex-1 overflow-hidden">
             <ViewContainer />
           </main>
         </div>
       </div>
-
-      {/* Live region for screen reader announcements */}
-      <LiveRegion message={announcement} />
 
       {/* Onboarding Tour */}
       {showOnboarding && (

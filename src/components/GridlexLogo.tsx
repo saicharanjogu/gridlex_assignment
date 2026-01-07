@@ -15,15 +15,15 @@ export function GridlexLogo({ size = 'md', showText = true }: GridlexLogoProps) 
   };
 
   return (
-    <div className="flex items-center gap-2" role="img" aria-label="Gridlex logo">
+    <div className="flex items-center gap-2">
       {/* Logo Icon - Grid pattern inspired by Gridlex */}
-      <div className={`${sizeClasses[size].icon} relative`} aria-hidden="true">
+      <div className={`${sizeClasses[size].icon} relative`}>
         <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <defs>
             <linearGradient id="gridlex-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#4f46e5" />
-              <stop offset="50%" stopColor="#7c3aed" />
-              <stop offset="100%" stopColor="#9333ea" />
+              <stop offset="0%" stopColor="#6366f1" />
+              <stop offset="50%" stopColor="#8b5cf6" />
+              <stop offset="100%" stopColor="#a855f7" />
             </linearGradient>
           </defs>
           {/* Main grid squares */}
@@ -35,7 +35,7 @@ export function GridlexLogo({ size = 'md', showText = true }: GridlexLogoProps) 
       </div>
       
       {showText && (
-        <span className={`font-bold ${sizeClasses[size].text} text-gradient-primary`} aria-hidden="true">
+        <span className={`font-bold ${sizeClasses[size].text} text-gradient-primary`}>
           Gridlex
         </span>
       )}

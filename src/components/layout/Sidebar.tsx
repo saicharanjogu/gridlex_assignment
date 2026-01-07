@@ -78,10 +78,10 @@ export function Sidebar() {
   };
 
   const tableItems: { key: TableType; label: string; icon: React.ReactNode; color: string }[] = [
-    { key: 'contacts', label: 'Contacts', icon: <Users className="h-4 w-4" aria-hidden="true" />, color: 'text-blue-600' },
-    { key: 'opportunities', label: 'Opportunities', icon: <TrendingUp className="h-4 w-4" aria-hidden="true" />, color: 'text-emerald-600' },
-    { key: 'organizations', label: 'Organizations', icon: <Building2 className="h-4 w-4" aria-hidden="true" />, color: 'text-violet-600' },
-    { key: 'tasks', label: 'Tasks', icon: <CheckSquare className="h-4 w-4" aria-hidden="true" />, color: 'text-amber-600' },
+    { key: 'contacts', label: 'Contacts', icon: <Users className="h-4 w-4" />, color: 'text-blue-500' },
+    { key: 'opportunities', label: 'Opportunities', icon: <TrendingUp className="h-4 w-4" />, color: 'text-emerald-500' },
+    { key: 'organizations', label: 'Organizations', icon: <Building2 className="h-4 w-4" />, color: 'text-violet-500' },
+    { key: 'tasks', label: 'Tasks', icon: <CheckSquare className="h-4 w-4" />, color: 'text-amber-500' },
   ];
 
   const savedViewsForTable = viewConfigs.filter(
@@ -90,91 +90,69 @@ export function Sidebar() {
 
   const getViewIcon = (type: string) => {
     switch (type) {
-      case 'list': return <List className="h-4 w-4" aria-hidden="true" />;
-      case 'kanban': return <LayoutGrid className="h-4 w-4" aria-hidden="true" />;
-      case 'calendar': return <Calendar className="h-4 w-4" aria-hidden="true" />;
-      case 'map': return <Map className="h-4 w-4" aria-hidden="true" />;
-      default: return <List className="h-4 w-4" aria-hidden="true" />;
+      case 'list': return <List className="h-4 w-4" />;
+      case 'kanban': return <LayoutGrid className="h-4 w-4" />;
+      case 'calendar': return <Calendar className="h-4 w-4" />;
+      case 'map': return <Map className="h-4 w-4" />;
+      default: return <List className="h-4 w-4" />;
     }
   };
 
   return (
-    <aside 
-      className="w-64 flex flex-col h-full bg-sidebar border-r border-sidebar-border"
-      role="complementary"
-      aria-label="Sidebar navigation"
-    >
+    <aside className="w-64 flex flex-col h-full bg-sidebar border-r border-sidebar-border">
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-1">
           {/* Quick Actions */}
           <div className="p-3 mb-2 rounded-lg gradient-primary-subtle border border-primary/10">
             <div className="flex items-center gap-2 mb-1.5">
-              <Sparkles className="h-4 w-4 text-primary flex-shrink-0" aria-hidden="true" />
+              <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
               <span className="text-sm font-medium text-primary">Quick Actions</span>
             </div>
             <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0" aria-label="Command or Control K">⌘K</kbd>
+              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">⌘K</kbd>
               <span>search</span>
-              <span className="text-muted-foreground/50" aria-hidden="true">•</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0" aria-label="Question mark">?</kbd>
+              <span className="text-muted-foreground/50">•</span>
+              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">?</kbd>
               <span>shortcuts</span>
             </div>
           </div>
 
           {/* Tables Section */}
           <Collapsible open={tablesOpen} onOpenChange={setTablesOpen}>
-            <CollapsibleTrigger 
-              className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro"
-              aria-expanded={tablesOpen}
-            >
+            <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
               <span>Tables</span>
-              <ChevronDown 
-                className={`h-4 w-4 transition-transform ${tablesOpen ? '' : '-rotate-90'}`} 
-                aria-hidden="true" 
-              />
+              <ChevronDown className={`h-4 w-4 transition-transform ${tablesOpen ? '' : '-rotate-90'}`} />
             </CollapsibleTrigger>
             <CollapsibleContent className="space-y-0.5 mt-1">
-              <nav aria-label="Data tables">
-                <ul role="list" className="space-y-0.5">
-                  {tableItems.map((item) => (
-                    <li key={item.key}>
-                      <Button
-                        variant={currentTable === item.key ? 'secondary' : 'ghost'}
-                        size="sm"
-                        className={`w-full justify-start gap-3 h-9 ${
-                          currentTable === item.key 
-                            ? 'bg-primary/10 text-primary border border-primary/20' 
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                        onClick={() => setCurrentTable(item.key)}
-                        aria-current={currentTable === item.key ? 'page' : undefined}
-                      >
-                        <span className={currentTable === item.key ? 'text-primary' : item.color}>
-                          {item.icon}
-                        </span>
-                        <span>{item.label}</span>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
+              {tableItems.map((item) => (
+                <Button
+                  key={item.key}
+                  variant={currentTable === item.key ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className={`w-full justify-start gap-3 h-9 ${
+                    currentTable === item.key 
+                      ? 'bg-primary/10 text-primary border border-primary/20' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                  onClick={() => setCurrentTable(item.key)}
+                >
+                  <span className={currentTable === item.key ? 'text-primary' : item.color}>
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </Button>
+              ))}
             </CollapsibleContent>
           </Collapsible>
 
-          <Separator className="my-3" aria-hidden="true" />
+          <Separator className="my-3" />
 
           {/* Saved Views Section */}
           <Collapsible open={viewsOpen} onOpenChange={setViewsOpen}>
             <div className="flex items-center justify-between w-full px-2 py-1.5">
-              <CollapsibleTrigger 
-                className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro"
-                aria-expanded={viewsOpen}
-              >
+              <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
                 <span>Saved Views</span>
-                <ChevronDown 
-                  className={`h-4 w-4 transition-transform ${viewsOpen ? '' : '-rotate-90'}`} 
-                  aria-hidden="true" 
-                />
+                <ChevronDown className={`h-4 w-4 transition-transform ${viewsOpen ? '' : '-rotate-90'}`} />
               </CollapsibleTrigger>
               {currentUser.permissions.canConfigureViews && (
                 <Button
@@ -184,65 +162,46 @@ export function Sidebar() {
                   onClick={(e) => {
                     e.stopPropagation();
                   }}
-                  aria-label="Create new saved view"
                 >
-                  <Plus className="h-3 w-3" aria-hidden="true" />
+                  <Plus className="h-3 w-3" />
                 </Button>
               )}
             </div>
             <CollapsibleContent className="space-y-0.5 mt-1">
-              <nav aria-label="Saved views">
-                <ul role="list" className="space-y-0.5">
-                  {savedViewsForTable.map((view) => (
-                    <li key={view.id}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-foreground hover:bg-primary/5"
-                        onClick={() => {
-                          setActiveViewConfig(view);
-                          setCurrentView(view.type);
-                        }}
-                        aria-label={`${view.name}${view.isDefault ? ', default view' : ''}`}
-                      >
-                        {getViewIcon(view.type)}
-                        <span className="flex-1 text-left truncate">{view.name}</span>
-                        {view.isDefault && (
-                          <Bookmark 
-                            className="h-3 w-3 text-primary fill-primary" 
-                            aria-hidden="true" 
-                          />
-                        )}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              </nav>
+              {savedViewsForTable.map((view) => (
+                <Button
+                  key={view.id}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-foreground hover:bg-primary/5"
+                  onClick={() => {
+                    setActiveViewConfig(view);
+                    setCurrentView(view.type);
+                  }}
+                >
+                  {getViewIcon(view.type)}
+                  <span className="flex-1 text-left truncate">{view.name}</span>
+                  {view.isDefault && (
+                    <Bookmark className="h-3 w-3 text-primary fill-primary" />
+                  )}
+                </Button>
+              ))}
             </CollapsibleContent>
           </Collapsible>
 
-          <Separator className="my-3" aria-hidden="true" />
+          <Separator className="my-3" />
 
           {/* Filters Section */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
             <div className="flex items-center justify-between w-full px-2 py-1.5">
-              <CollapsibleTrigger 
-                className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro"
-                aria-expanded={filtersOpen}
-              >
+              <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
                 <span>Filters</span>
                 {filters.length > 0 && (
-                  <Badge 
-                    className="h-5 px-1.5 text-[10px] gradient-primary border-0"
-                    aria-label={`${filters.length} active filters`}
-                  >
+                  <Badge className="h-5 px-1.5 text-[10px] gradient-primary border-0">
                     {filters.length}
                   </Badge>
                 )}
-                <ChevronDown 
-                  className={`h-4 w-4 transition-transform ${filtersOpen ? '' : '-rotate-90'}`} 
-                  aria-hidden="true" 
-                />
+                <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? '' : '-rotate-90'}`} />
               </CollapsibleTrigger>
               {filters.length > 0 && (
                 <Button
@@ -253,7 +212,6 @@ export function Sidebar() {
                     e.stopPropagation();
                     clearFilters();
                   }}
-                  aria-label="Clear all filters"
                 >
                   Clear
                 </Button>
@@ -262,34 +220,29 @@ export function Sidebar() {
             <CollapsibleContent className="mt-1">
               {/* Active Filters */}
               {filters.length > 0 && (
-                <ul 
-                  className="space-y-1.5 mb-3" 
-                  role="list" 
-                  aria-label="Active filters"
-                >
+                <div className="space-y-1.5 mb-3">
                   {filters.map((filter, index) => (
-                    <li
+                    <div
                       key={index}
                       className="flex items-center gap-2 px-2 py-1.5 text-xs bg-primary/5 border border-primary/10 rounded-md group"
                     >
-                      <Filter className="h-3 w-3 text-primary flex-shrink-0" aria-hidden="true" />
+                      <Filter className="h-3 w-3 text-primary flex-shrink-0" />
                       <span className="flex-1 truncate">
                         <span className="font-medium text-primary">{filter.field}</span>
                         <span className="text-muted-foreground"> {filter.operator} </span>
-                        <span className="font-medium">&quot;{filter.value}&quot;</span>
+                        <span className="font-medium">"{filter.value}"</span>
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-micro hover:bg-destructive/10 hover:text-destructive"
+                        className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-micro hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => removeFilter(index)}
-                        aria-label={`Remove filter: ${filter.field} ${filter.operator} ${filter.value}`}
                       >
-                        <X className="h-3 w-3" aria-hidden="true" />
+                        <X className="h-3 w-3" />
                       </Button>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
 
               {/* Add Filter */}
@@ -299,24 +252,16 @@ export function Sidebar() {
                   size="sm"
                   className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-primary hover:bg-primary/5"
                   onClick={() => setShowFilterForm(true)}
-                  aria-label="Add new filter"
                 >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  <Plus className="h-4 w-4" />
                   <span>Add filter</span>
                 </Button>
               ) : (
-                <form 
-                  className="space-y-3 p-3 bg-background border border-border rounded-lg shadow-sm"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleAddFilter();
-                  }}
-                  aria-label="Add filter form"
-                >
+                <div className="space-y-3 p-3 bg-background border border-border rounded-lg shadow-sm">
                   <div className="space-y-1.5">
-                    <Label htmlFor="filter-field" className="text-xs">Field</Label>
+                    <Label className="text-xs">Field</Label>
                     <Select value={newFilterField} onValueChange={setNewFilterField}>
-                      <SelectTrigger id="filter-field" className="h-8">
+                      <SelectTrigger className="h-8">
                         <SelectValue placeholder="Select field" />
                       </SelectTrigger>
                       <SelectContent>
@@ -330,9 +275,9 @@ export function Sidebar() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="filter-operator" className="text-xs">Condition</Label>
+                    <Label className="text-xs">Condition</Label>
                     <Select value={newFilterOperator} onValueChange={(v) => setNewFilterOperator(v as FilterType['operator'])}>
-                      <SelectTrigger id="filter-operator" className="h-8">
+                      <SelectTrigger className="h-8">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -345,9 +290,8 @@ export function Sidebar() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="filter-value" className="text-xs">Value</Label>
+                    <Label className="text-xs">Value</Label>
                     <Input
-                      id="filter-value"
                       placeholder="Enter value"
                       value={newFilterValue}
                       onChange={(e) => setNewFilterValue(e.target.value)}
@@ -357,7 +301,6 @@ export function Sidebar() {
 
                   <div className="flex gap-2">
                     <Button
-                      type="button"
                       size="sm"
                       variant="outline"
                       className="flex-1 h-8"
@@ -366,15 +309,15 @@ export function Sidebar() {
                       Cancel
                     </Button>
                     <Button
-                      type="submit"
                       size="sm"
                       className="flex-1 h-8 gradient-primary border-0"
+                      onClick={handleAddFilter}
                       disabled={!newFilterField || !newFilterValue}
                     >
                       Apply
                     </Button>
                   </div>
-                </form>
+                </div>
               )}
             </CollapsibleContent>
           </Collapsible>

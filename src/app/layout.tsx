@@ -20,10 +20,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
-        {/* Skip link for keyboard navigation - WCAG 2.1 AA requirement */}
-        <a href="#main-content" className="skip-link">
-          Skip to main content
-        </a>
         {children}
       </body>
     </html>

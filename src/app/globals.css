@@ -10,37 +10,33 @@
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 246 80% 50%;
+    --primary: 246 80% 60%;
     --primary-foreground: 0 0% 100%;
     --secondary: 220 14% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 40%;
-    --accent: 246 80% 50%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 246 80% 60%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 40%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 85%;
-    --input: 220 13% 85%;
-    --ring: 246 80% 50%;
-    --chart-1: 246 80% 50%;
-    --chart-2: 173 80% 35%;
-    --chart-3: 38 92% 45%;
-    --chart-4: 280 65% 50%;
-    --chart-5: 340 75% 45%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 246 80% 60%;
+    --chart-1: 246 80% 60%;
+    --chart-2: 173 80% 40%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
     --radius: 0.5rem;
     --sidebar-background: 240 20% 99%;
-    --sidebar-foreground: 220 9% 40%;
-    --sidebar-primary: 246 80% 50%;
+    --sidebar-foreground: 220 9% 46%;
+    --sidebar-primary: 246 80% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 246 80% 97%;
-    --sidebar-accent-foreground: 246 80% 40%;
-    --sidebar-border: 220 13% 85%;
-    --sidebar-ring: 246 80% 50%;
-    
-    /* Focus ring for accessibility */
-    --focus-ring: 246 80% 50%;
-    --focus-ring-offset: 0 0% 100%;
+    --sidebar-accent-foreground: 246 80% 60%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 246 80% 60%;
   }
 
   .dark {
@@ -51,17 +47,17 @@
     --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
     --primary: 246 80% 65%;
-    --primary-foreground: 222 47% 6%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 222 47% 14%;
     --secondary-foreground: 210 40% 98%;
     --muted: 222 47% 14%;
-    --muted-foreground: 217 10% 70%;
+    --muted-foreground: 217 10% 64%;
     --accent: 246 80% 65%;
-    --accent-foreground: 222 47% 6%;
-    --destructive: 0 62% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 47% 22%;
-    --input: 222 47% 22%;
+    --border: 222 47% 18%;
+    --input: 222 47% 18%;
     --ring: 246 80% 65%;
     --chart-1: 246 70% 60%;
     --chart-2: 173 60% 45%;
@@ -69,17 +65,13 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 217 10% 70%;
+    --sidebar-foreground: 217 10% 64%;
     --sidebar-primary: 246 80% 65%;
-    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 47% 14%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 22%;
+    --sidebar-border: 222 47% 18%;
     --sidebar-ring: 246 80% 65%;
-    
-    /* Focus ring for accessibility */
-    --focus-ring: 246 80% 65%;
-    --focus-ring-offset: 222 47% 6%;
   }
 }
 
@@ -91,58 +83,6 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
-  
-  /* Improved focus styles for accessibility - WCAG 2.1 AA compliant */
-  *:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-  }
-  
-  /* Skip link for keyboard navigation */
-  .skip-link {
-    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg;
-  }
-  
-  /* Ensure minimum touch target size of 44x44px for interactive elements */
-  button, 
-  [role="button"],
-  a,
-  input[type="checkbox"],
-  input[type="radio"],
-  select {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Exception for inline elements that don't need large touch targets */
-  .inline-action {
-    min-height: auto;
-    min-width: auto;
-  }
-  
-  /* Reduced motion preference */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
-  
-  /* High contrast mode support */
-  @media (prefers-contrast: high) {
-    :root {
-      --border: 220 13% 50%;
-      --muted-foreground: 220 9% 30%;
-    }
-    
-    .dark {
-      --border: 222 47% 40%;
-      --muted-foreground: 217 10% 80%;
-    }
-  }
 }
 
 @layer utilities {
@@ -150,32 +90,15 @@
     @apply transition-all duration-150 ease-out;
   }
   
-  /* Respect reduced motion preference */
-  @media (prefers-reduced-motion: reduce) {
-    .transition-micro {
-      @apply transition-none;
-    }
-  }
-  
   .gradient-primary {
-    @apply bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#9333ea];
+    @apply bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#a855f7];
   }
   
   .gradient-primary-subtle {
-    @apply bg-gradient-to-r from-[#4f46e5]/10 via-[#7c3aed]/10 to-[#9333ea]/10;
+    @apply bg-gradient-to-r from-[#6366f1]/10 via-[#8b5cf6]/10 to-[#a855f7]/10;
   }
   
   .text-gradient-primary {
-    @apply bg-gradient-to-r from-[#4f46e5] via-[#7c3aed] to-[#9333ea] bg-clip-text text-transparent;
-  }
-  
-  /* Visually hidden but accessible to screen readers */
-  .sr-only-focusable:not(:focus):not(:focus-within) {
-    @apply sr-only;
-  }
-  
-  /* Focus indicator that meets WCAG 2.1 AA requirements */
-  .focus-visible-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply bg-gradient-to-r from-[#6366f1] via-[#8b5cf6] to-[#a855f7] bg-clip-text text-transparent;
   }
 }
