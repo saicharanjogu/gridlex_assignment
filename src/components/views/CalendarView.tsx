@@ -5,12 +5,21 @@ import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Record, Task, Opportunity } from '@/types';
 import {
@@ -150,27 +159,20 @@ export function CalendarView() {
   const days = getDateRange();
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const getEventColor = (record: Record) => {
+  const getEventVariant = (record: Record): "default" | "secondary" | "destructive" | "outline" => {
     if (record.tableType === 'tasks') {
       const priority = (record as Task).priority;
-      switch (priority) {
-        case 'Urgent':
-          return 'bg-red-500 text-white';
-        case 'High':
-          return 'bg-orange-500 text-white';
-        case 'Medium':
-          return 'bg-amber-500 text-white';
-        default:
-          return 'bg-slate-500 text-white';
-      }
+      if (['Urgent', 'High'].includes(priority)) return 'destructive';
+      if (priority === 'Medium') return 'default';
+      return 'secondary';
     }
     if (record.tableType === 'opportunities') {
       const stage = (record as Opportunity).stage;
-      if (stage === 'Closed Won') return 'bg-emerald-500 text-white';
-      if (stage === 'Closed Lost') return 'bg-red-500 text-white';
-      return 'bg-blue-500 text-white';
+      if (stage === 'Closed Won') return 'default';
+      if (stage === 'Closed Lost') return 'destructive';
+      return 'secondary';
     }
-    return 'bg-primary text-primary-foreground';
+    return 'secondary';
   };
 
   const renderMonthView = () => (
@@ -216,9 +218,14 @@ export function CalendarView() {
                   <button
                     key={record.id}
                     onClick={() => setSelectedRecord(record)}
-                    className={`w-full px-2 py-1 text-xs text-left rounded truncate transition-micro hover:opacity-80 ${getEventColor(record)}`}
+                    className="w-full"
                   >
-                    {record.name}
+                    <Badge 
+                      variant={getEventVariant(record)} 
+                      className="w-full justify-start truncate text-xs font-normal cursor-pointer hover:opacity-80"
+                    >
+                      {record.name}
+                    </Badge>
                   </button>
                 ))}
                 {dayRecords.length > 3 && (
@@ -265,9 +272,14 @@ export function CalendarView() {
                   <button
                     key={record.id}
                     onClick={() => setSelectedRecord(record)}
-                    className={`w-full px-2 py-1.5 text-xs text-left rounded transition-micro hover:opacity-80 ${getEventColor(record)}`}
+                    className="w-full"
                   >
-                    {record.name}
+                    <Badge 
+                      variant={getEventVariant(record)} 
+                      className="w-full justify-start truncate text-xs font-normal cursor-pointer hover:opacity-80"
+                    >
+                      {record.name}
+                    </Badge>
                   </button>
                 ))}
               </div>
@@ -289,24 +301,26 @@ export function CalendarView() {
         </div>
         <div className="max-w-lg mx-auto space-y-3">
           {dayRecords.map((record) => (
-            <button
+            <Card
               key={record.id}
+              className="cursor-pointer hover:shadow-md transition-all"
               onClick={() => setSelectedRecord(record)}
-              className="w-full flex items-center gap-4 p-4 text-left rounded-xl border border-border bg-background hover:bg-muted/50 transition-micro"
             >
-              <div className={`w-3 h-3 rounded-full ${getEventColor(record).split(' ')[0]}`} />
-              <div className="flex-1 min-w-0">
-                <h4 className="font-medium truncate">{record.name}</h4>
-                <p className="text-sm text-muted-foreground capitalize">{record.tableType}</p>
-              </div>
-              {record.tableType === 'tasks' && (
-                <Badge variant="outline">{(record as Task).priority}</Badge>
-              )}
-            </button>
+              <CardContent className="p-4 flex items-center gap-4">
+                <Badge variant={getEventVariant(record)} className="h-3 w-3 p-0 rounded-full" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium truncate">{record.name}</h4>
+                  <p className="text-sm text-muted-foreground capitalize">{record.tableType}</p>
+                </div>
+                {record.tableType === 'tasks' && (
+                  <Badge variant="outline">{(record as Task).priority}</Badge>
+                )}
+              </CardContent>
+            </Card>
           ))}
           {dayRecords.length === 0 && (
             <div className="text-center py-16 text-muted-foreground">
-              <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-30" strokeWidth={1} />
+              <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-30" />
               <p className="text-base font-medium">No events</p>
               <p className="text-sm">Nothing scheduled for this day</p>
             </div>
@@ -317,120 +331,126 @@ export function CalendarView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Calendar Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
-          </Button>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={navigatePrevious}>
-              <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+    <TooltipProvider>
+      <div className="flex flex-col h-full bg-background">
+        {/* Calendar Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" onClick={goToToday}>
+              Today
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={navigateNext}>
-              <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-            </Button>
-          </div>
-          <h2 className="text-lg font-semibold">
-            {viewMode === 'day'
-              ? format(currentDate, 'MMMM d, yyyy')
-              : format(currentDate, 'MMMM yyyy')}
-          </h2>
-        </div>
-        
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
-          {(['month', 'week', 'day'] as CalendarViewMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-micro capitalize ${
-                viewMode === mode
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Calendar Body */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {viewMode === 'month' && renderMonthView()}
-        {viewMode === 'week' && renderWeekView()}
-        {viewMode === 'day' && renderDayView()}
-      </div>
-
-      {/* Record Detail Dialog */}
-      <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{selectedRecord?.name}</DialogTitle>
-          </DialogHeader>
-          {selectedRecord && (
-            <div className="space-y-4 pt-2">
-              <Badge variant="outline" className="capitalize">
-                {selectedRecord.tableType}
-              </Badge>
-              
-              <div className="grid grid-cols-2 gap-4">
-                {selectedRecord.tableType === 'tasks' && (
-                  <>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Priority</p>
-                      <p className="font-medium">{(selectedRecord as Task).priority}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Status</p>
-                      <p className="font-medium">{(selectedRecord as Task).status}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Assigned To</p>
-                      <p className="font-medium">{(selectedRecord as Task).assignedTo}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Due Date</p>
-                      <p className="font-medium">
-                        {new Date((selectedRecord as Task).dueDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </>
-                )}
-                {selectedRecord.tableType === 'opportunities' && (
-                  <>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Value</p>
-                      <p className="font-medium">
-                        {new Intl.NumberFormat('en-US', {
-                          style: 'currency',
-                          currency: 'USD',
-                          minimumFractionDigits: 0,
-                        }).format((selectedRecord as Opportunity).value)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Stage</p>
-                      <p className="font-medium">{(selectedRecord as Opportunity).stage}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Assigned To</p>
-                      <p className="font-medium">{(selectedRecord as Opportunity).assignedTo}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Close Date</p>
-                      <p className="font-medium">
-                        {new Date((selectedRecord as Opportunity).closeDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={navigatePrevious}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Previous</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={navigateNext}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Next</TooltipContent>
+              </Tooltip>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            <h2 className="text-lg font-semibold">
+              {viewMode === 'day'
+                ? format(currentDate, 'MMMM d, yyyy')
+                : format(currentDate, 'MMMM yyyy')}
+            </h2>
+          </div>
+          
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as CalendarViewMode)}>
+            <TabsList>
+              <TabsTrigger value="month">Month</TabsTrigger>
+              <TabsTrigger value="week">Week</TabsTrigger>
+              <TabsTrigger value="day">Day</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Calendar Body */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {viewMode === 'month' && renderMonthView()}
+          {viewMode === 'week' && renderWeekView()}
+          {viewMode === 'day' && renderDayView()}
+        </div>
+
+        {/* Record Detail Dialog */}
+        <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{selectedRecord?.name}</DialogTitle>
+            </DialogHeader>
+            {selectedRecord && (
+              <div className="space-y-4 pt-2">
+                <Badge variant="outline" className="capitalize">
+                  {selectedRecord.tableType}
+                </Badge>
+                
+                <Separator />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedRecord.tableType === 'tasks' && (
+                    <>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Priority</p>
+                        <p className="font-medium">{(selectedRecord as Task).priority}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Status</p>
+                        <p className="font-medium">{(selectedRecord as Task).status}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Assigned To</p>
+                        <p className="font-medium">{(selectedRecord as Task).assignedTo}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Due Date</p>
+                        <p className="font-medium">
+                          {new Date((selectedRecord as Task).dueDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                  {selectedRecord.tableType === 'opportunities' && (
+                    <>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Value</p>
+                        <p className="font-medium">
+                          {new Intl.NumberFormat('en-US', {
+                            style: 'currency',
+                            currency: 'USD',
+                            minimumFractionDigits: 0,
+                          }).format((selectedRecord as Opportunity).value)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Stage</p>
+                        <p className="font-medium">{(selectedRecord as Opportunity).stage}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Assigned To</p>
+                        <p className="font-medium">{(selectedRecord as Opportunity).assignedTo}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Close Date</p>
+                        <p className="font-medium">
+                          {new Date((selectedRecord as Opportunity).closeDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 }
