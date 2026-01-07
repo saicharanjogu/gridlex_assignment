@@ -27,12 +27,12 @@ import {
   Download,
   X,
   Bell,
+  Command,
 } from 'lucide-react';
 import { TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
 import { ViewConfigDialog } from '@/components/dialogs/ViewConfigDialog';
 import { GridlexLogo } from '@/components/GridlexLogo';
-import { ViewSelector } from '@/components/ViewSelector';
 import { getFirstAvailableView } from '@/lib/view-availability';
 
 export function Header() {
@@ -91,39 +91,37 @@ export function Header() {
             </Select>
           </div>
 
-          {/* Center section - View selector with disabled states */}
-          <div className="hidden md:block">
-            <ViewSelector
-              currentView={currentView}
-              currentTable={currentTable}
-              onViewChange={setCurrentView}
-            />
-          </div>
-
-          {/* Right section */}
-          <div className="flex items-center gap-2">
+          {/* Center section - Search */}
+          <div className="flex-1 max-w-xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-[#1BA9C4]/50"
+                className="w-full h-9 pl-9 pr-20 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-[#1BA9C4]/50"
               />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
-                  onClick={() => setSearchQuery('')}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                {searchQuery ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                ) : (
+                  <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                    <Command className="h-3 w-3" />K
+                  </kbd>
+                )}
+              </div>
             </div>
+          </div>
 
-            <Separator orientation="vertical" className="h-6 hidden sm:block" />
-
+          {/* Right section */}
+          <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-9 gap-2 text-muted-foreground hover:text-[#003B5C]">
@@ -184,6 +182,8 @@ export function Header() {
               </TooltipTrigger>
               <TooltipContent>Notifications</TooltipContent>
             </Tooltip>
+
+            <Separator orientation="vertical" className="h-6" />
 
             {currentUser.permissions.canEditRecords && (
               <Button 
