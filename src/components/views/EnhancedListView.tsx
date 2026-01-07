@@ -92,7 +92,6 @@ export function EnhancedListView() {
   const [editingCell, setEditingCell] = useState<{ recordId: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState('');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [focusedRow, setFocusedRow] = useState<number>(0);
   const [density, setDensity] = useState<RowDensity>('comfortable');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -100,7 +99,6 @@ export function EnhancedListView() {
   const [draggedColumn, setDraggedColumn] = useState<number | null>(null);
   
   const tableRef = useRef<HTMLDivElement>(null);
-  const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
   const baseFields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
   const [columns, setColumns] = useState<ColumnConfig[]>(() => 
@@ -115,7 +113,6 @@ export function EnhancedListView() {
     setSortField(null);
     setSortOrder('asc');
     setEditingCell(null);
-    setFocusedRow(0);
     clearSelection();
   }, [currentTable, clearSelection]);
 
@@ -182,47 +179,6 @@ export function EnhancedListView() {
       setCurrentPage(1);
     }
   }, [filteredRecords.length, pageSize, currentPage]);
-
-  // Keyboard navigation for table rows
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const maxIndex = paginatedRecords.length - 1;
-    
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        setFocusedRow(prev => Math.min(prev + 1, maxIndex));
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        setFocusedRow(prev => Math.max(prev - 1, 0));
-        break;
-      case 'Home':
-        e.preventDefault();
-        setFocusedRow(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        setFocusedRow(maxIndex);
-        break;
-      case 'Enter':
-        e.preventDefault();
-        if (paginatedRecords[focusedRow]) {
-          openViewDialog(paginatedRecords[focusedRow]);
-        }
-        break;
-      case ' ':
-        e.preventDefault();
-        if (paginatedRecords[focusedRow]) {
-          toggleRecordSelection(paginatedRecords[focusedRow].id);
-        }
-        break;
-    }
-  }, [focusedRow, paginatedRecords, openViewDialog, toggleRecordSelection]);
-
-  // Focus the row when focusedRow changes
-  useEffect(() => {
-    rowRefs.current[focusedRow]?.focus();
-  }, [focusedRow]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -314,11 +270,10 @@ export function EnhancedListView() {
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" | "success" | "warning" => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     const statusLower = status.toLowerCase();
-    if (['active', 'completed', 'closed won'].includes(statusLower)) return 'success';
+    if (['active', 'completed', 'closed won'].includes(statusLower)) return 'default';
     if (['inactive', 'cancelled', 'closed lost'].includes(statusLower)) return 'destructive';
-    if (['pending', 'in progress', 'proposal', 'negotiation'].includes(statusLower)) return 'warning';
     return 'secondary';
   };
 
@@ -346,11 +301,11 @@ export function EnhancedListView() {
   const getDensityClasses = () => {
     switch (density) {
       case 'compact':
-        return { row: 'h-10', cell: 'py-1 text-xs' };
+        return { row: 'h-8', cell: 'py-1 text-xs' };
       case 'spacious':
-        return { row: 'h-16', cell: 'py-4 text-sm' };
+        return { row: 'h-14', cell: 'py-4 text-sm' };
       default:
-        return { row: 'h-12', cell: 'py-2 text-sm' };
+        return { row: 'h-11', cell: 'py-2 text-sm' };
     }
   };
 
@@ -365,17 +320,13 @@ export function EnhancedListView() {
     <TooltipProvider>
       <div className="flex flex-col h-full bg-background">
         {/* Enhanced Toolbar */}
-        <div 
-          className="flex items-center justify-between px-4 py-3 border-b border-border"
-          role="toolbar"
-          aria-label="Table actions"
-        >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground" aria-live="polite">
+            <span className="text-sm text-muted-foreground">
               {filteredRecords.length} {filteredRecords.length === 1 ? 'record' : 'records'}
             </span>
             {selectedRecords.length > 0 && (
-              <Badge variant="secondary" aria-live="polite">
+              <Badge variant="secondary">
                 {selectedRecords.length} selected
               </Badge>
             )}
@@ -385,30 +336,25 @@ export function EnhancedListView() {
             {/* Density Toggle */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-11 gap-2"
-                  aria-label={`Row density: ${density}`}
-                >
-                  {density === 'compact' && <AlignJustify className="h-4 w-4" aria-hidden="true" />}
-                  {density === 'comfortable' && <AlignCenter className="h-4 w-4" aria-hidden="true" />}
-                  {density === 'spacious' && <AlignLeft className="h-4 w-4" aria-hidden="true" />}
+                <Button variant="ghost" size="sm" className="h-8 gap-2">
+                  {density === 'compact' && <AlignJustify className="h-4 w-4" />}
+                  {density === 'comfortable' && <AlignCenter className="h-4 w-4" />}
+                  {density === 'spacious' && <AlignLeft className="h-4 w-4" />}
                   <span className="hidden sm:inline capitalize">{density}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuRadioGroup value={density} onValueChange={(v) => setDensity(v as RowDensity)}>
                   <DropdownMenuRadioItem value="compact">
-                    <AlignJustify className="h-4 w-4 mr-2" aria-hidden="true" />
+                    <AlignJustify className="h-4 w-4 mr-2" />
                     Compact
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="comfortable">
-                    <AlignCenter className="h-4 w-4 mr-2" aria-hidden="true" />
+                    <AlignCenter className="h-4 w-4 mr-2" />
                     Comfortable
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="spacious">
-                    <AlignLeft className="h-4 w-4 mr-2" aria-hidden="true" />
+                    <AlignLeft className="h-4 w-4 mr-2" />
                     Spacious
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
@@ -418,13 +364,8 @@ export function EnhancedListView() {
             {/* Column Visibility */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-11 gap-2"
-                  aria-label="Toggle column visibility"
-                >
-                  <Columns className="h-4 w-4" aria-hidden="true" />
+                <Button variant="ghost" size="sm" className="h-8 gap-2">
+                  <Columns className="h-4 w-4" />
                   <span className="hidden sm:inline">Columns</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -444,13 +385,13 @@ export function EnhancedListView() {
             {/* Bulk Actions */}
             {currentUser.permissions.canEditRecords && selectedRecords.length > 0 && (
               <>
-                <div className="h-4 w-px bg-border" aria-hidden="true" />
+                <div className="h-4 w-px bg-border" />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-11"
+                      className="h-8"
                       onClick={() => {
                         if (selectedRecords.length === 1) {
                           const record = paginatedRecords.find(r => r.id === selectedRecords[0]);
@@ -458,9 +399,8 @@ export function EnhancedListView() {
                         }
                       }}
                       disabled={selectedRecords.length !== 1}
-                      aria-label="Edit selected record"
                     >
-                      <Edit className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                      <Edit className="h-4 w-4 mr-1.5" />
                       Edit
                     </Button>
                   </TooltipTrigger>
@@ -471,15 +411,14 @@ export function EnhancedListView() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="h-11"
+                      className="h-8"
                       onClick={() => {
                         selectedRecords.forEach(id => duplicateRecord(id));
                         toast.success(`${selectedRecords.length} record(s) duplicated`);
                         clearSelection();
                       }}
-                      aria-label={`Duplicate ${selectedRecords.length} selected records`}
                     >
-                      <Copy className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                      <Copy className="h-4 w-4 mr-1.5" />
                       Duplicate
                     </Button>
                   </TooltipTrigger>
@@ -491,11 +430,10 @@ export function EnhancedListView() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-11 text-destructive hover:text-destructive"
+                        className="h-8 text-destructive hover:text-destructive"
                         onClick={() => openDeleteDialog(selectedRecords)}
-                        aria-label={`Delete ${selectedRecords.length} selected records`}
                       >
-                        <Trash2 className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                        <Trash2 className="h-4 w-4 mr-1.5" />
                         Delete
                       </Button>
                     </TooltipTrigger>
@@ -508,14 +446,7 @@ export function EnhancedListView() {
         </div>
 
         {/* Table */}
-        <div 
-          className="flex-1 overflow-auto" 
-          ref={tableRef}
-          role="region"
-          aria-label="Records table"
-          tabIndex={0}
-          onKeyDown={handleKeyDown}
-        >
+        <div className="flex-1 overflow-auto" ref={tableRef}>
           <Table>
             <TableHeader className="sticky top-0 bg-muted/50 z-10">
               <TableRow className="hover:bg-transparent">
@@ -523,12 +454,11 @@ export function EnhancedListView() {
                   <Checkbox
                     checked={selectedRecords.length === paginatedRecords.length && paginatedRecords.length > 0}
                     onCheckedChange={handleSelectAll}
-                    aria-label={selectedRecords.length === paginatedRecords.length ? "Deselect all records" : "Select all records"}
                   />
                 </TableHead>
                 {currentTable === 'unified' && (
                   <TableHead className="text-xs font-semibold uppercase tracking-wider">
-                    <span className="sr-only">Record</span> Type
+                    Type
                   </TableHead>
                 )}
                 {visibleColumns.map((column, index) => (
@@ -540,30 +470,24 @@ export function EnhancedListView() {
                     onDragStart={() => handleColumnDragStart(index)}
                     onDragOver={(e) => handleColumnDragOver(e, index)}
                     onDragEnd={handleColumnDragEnd}
-                    scope="col"
-                    aria-sort={sortField === column.key ? (sortOrder === 'asc' ? 'ascending' : 'descending') : undefined}
                   >
                     <div className="flex items-center gap-1">
-                      <GripVertical 
-                        className="h-3 w-3 text-muted-foreground/50 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" 
-                        aria-hidden="true"
-                      />
+                      <GripVertical className="h-3 w-3 text-muted-foreground/50 cursor-grab opacity-0 group-hover:opacity-100 transition-opacity" />
                       
                       {column.pinned && (
-                        <Pin className="h-3 w-3 text-primary" aria-label="Pinned column" />
+                        <Pin className="h-3 w-3 text-primary" />
                       )}
                       
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-micro hover:text-foreground"
-                            aria-label={`${column.label} column options`}
+                            className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-micro hover:text-foreground`}
                           >
                             {column.label}
                             {sortField === column.key && (
                               sortOrder === 'asc' 
-                                ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
-                                : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />
+                                ? <ArrowUp className="h-3.5 w-3.5" />
+                                : <ArrowDown className="h-3.5 w-3.5" />
                             )}
                           </button>
                         </DropdownMenuTrigger>
@@ -571,22 +495,22 @@ export function EnhancedListView() {
                           {column.sortable && (
                             <>
                               <DropdownMenuItem onClick={() => { setSortField(column.key); setSortOrder('asc'); }}>
-                                <ArrowUp className="h-4 w-4 mr-2" aria-hidden="true" />
+                                <ArrowUp className="h-4 w-4 mr-2" />
                                 Sort Ascending
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => { setSortField(column.key); setSortOrder('desc'); }}>
-                                <ArrowDown className="h-4 w-4 mr-2" aria-hidden="true" />
+                                <ArrowDown className="h-4 w-4 mr-2" />
                                 Sort Descending
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                             </>
                           )}
                           <DropdownMenuItem onClick={() => toggleColumnPin(column.key)}>
-                            <Pin className="h-4 w-4 mr-2" aria-hidden="true" />
+                            <Pin className="h-4 w-4 mr-2" />
                             {column.pinned ? 'Unpin Column' : 'Pin Column'}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleColumnVisibility(column.key)}>
-                            <EyeOff className="h-4 w-4 mr-2" aria-hidden="true" />
+                            <EyeOff className="h-4 w-4 mr-2" />
                             Hide Column
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -599,39 +523,27 @@ export function EnhancedListView() {
                         resizingColumn === column.key ? 'bg-primary' : ''
                       }`}
                       onMouseDown={(e) => startResize(e, column.key)}
-                      role="separator"
-                      aria-orientation="vertical"
-                      aria-label={`Resize ${column.label} column`}
                     />
                   </TableHead>
                 ))}
-                <TableHead className="w-12">
-                  <span className="sr-only">Actions</span>
-                </TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedRecords.map((record, index) => (
+              {paginatedRecords.map((record) => (
                 <TableRow
                   key={record.id}
-                  ref={(el) => { rowRefs.current[index] = el; }}
                   className={`transition-micro ${densityClasses.row} ${
                     selectedRecords.includes(record.id) ? 'bg-primary/5' : ''
-                  } ${focusedRow === index ? 'ring-2 ring-inset ring-ring' : ''}`}
+                  }`}
                   onMouseEnter={() => setHoveredRow(record.id)}
                   onMouseLeave={() => setHoveredRow(null)}
-                  onFocus={() => setFocusedRow(index)}
                   onDoubleClick={() => openViewDialog(record)}
-                  tabIndex={focusedRow === index ? 0 : -1}
-                  role="row"
-                  aria-selected={selectedRecords.includes(record.id)}
-                  aria-rowindex={index + 1}
                 >
                   <TableCell className={densityClasses.cell} onClick={(e) => e.stopPropagation()}>
                     <Checkbox
                       checked={selectedRecords.includes(record.id)}
                       onCheckedChange={() => toggleRecordSelection(record.id)}
-                      aria-label={`Select ${record.name}`}
                     />
                   </TableCell>
                   {currentTable === 'unified' && (
@@ -672,8 +584,7 @@ export function EnhancedListView() {
                                 setEditingCell(null);
                               }
                             }}
-                            className="h-8 text-sm"
-                            aria-label={`Edit ${column.label}`}
+                            className="h-7 text-sm"
                           />
                         ) : isStatusField ? (
                           <Badge variant={getStatusVariant(String(value))}>
@@ -693,28 +604,27 @@ export function EnhancedListView() {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          className={`h-11 w-11 transition-micro ${
-                            hoveredRow === record.id || focusedRow === index ? 'opacity-100' : 'opacity-0'
+                          className={`h-7 w-7 transition-micro ${
+                            hoveredRow === record.id ? 'opacity-100' : 'opacity-0'
                           }`}
-                          aria-label={`Actions for ${record.name}`}
                         >
-                          <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-44">
                         <DropdownMenuItem onClick={() => openViewDialog(record)}>
-                          <Eye className="h-4 w-4 mr-2" aria-hidden="true" />
+                          <Eye className="h-4 w-4 mr-2" />
                           View details
                         </DropdownMenuItem>
                         {currentUser.permissions.canEditRecords && (
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => openEditDialog(record)}>
-                              <Edit className="h-4 w-4 mr-2" aria-hidden="true" />
+                              <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDuplicate(record.id)}>
-                              <Copy className="h-4 w-4 mr-2" aria-hidden="true" />
+                              <Copy className="h-4 w-4 mr-2" />
                               Duplicate
                             </DropdownMenuItem>
                           </>
@@ -726,7 +636,7 @@ export function EnhancedListView() {
                               className="text-destructive"
                               onClick={() => openDeleteDialog([record.id])}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" aria-hidden="true" />
+                              <Trash2 className="h-4 w-4 mr-2" />
                               Delete
                             </DropdownMenuItem>
                           </>
@@ -740,11 +650,7 @@ export function EnhancedListView() {
           </Table>
           
           {paginatedRecords.length === 0 && (
-            <div 
-              className="flex flex-col items-center justify-center py-20 text-muted-foreground"
-              role="status"
-              aria-live="polite"
-            >
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <p className="text-base font-medium">No records found</p>
               <p className="text-sm mt-1">Try adjusting your search or filters</p>
             </div>
@@ -752,18 +658,11 @@ export function EnhancedListView() {
         </div>
 
         {/* Pagination */}
-        <nav 
-          className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30"
-          aria-label="Table pagination"
-        >
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <label htmlFor="page-size" className="sr-only">Rows per page</label>
-            <span aria-hidden="true">Rows per page:</span>
-            <Select 
-              value={String(pageSize)} 
-              onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}
-            >
-              <SelectTrigger id="page-size" className="h-11 w-[70px]">
+            <span>Rows per page:</span>
+            <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+              <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -776,24 +675,23 @@ export function EnhancedListView() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground" aria-live="polite">
+            <span className="text-sm text-muted-foreground">
               {filteredRecords.length > 0 
                 ? `${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, filteredRecords.length)} of ${filteredRecords.length}`
                 : '0 records'}
             </span>
             
-            <div className="flex items-center gap-1" role="group" aria-label="Pagination controls">
+            <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-11 w-11"
+                    className="h-8 w-8"
                     onClick={() => setCurrentPage(1)}
                     disabled={currentPage === 1}
-                    aria-label="Go to first page"
                   >
-                    <ChevronsLeft className="h-4 w-4" aria-hidden="true" />
+                    <ChevronsLeft className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>First page</TooltipContent>
@@ -803,18 +701,17 @@ export function EnhancedListView() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-11 w-11"
+                    className="h-8 w-8"
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    aria-label="Go to previous page"
                   >
-                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Previous page</TooltipContent>
               </Tooltip>
               
-              <span className="px-2 text-sm" aria-current="page">
+              <span className="px-2 text-sm">
                 Page {currentPage} of {totalPages || 1}
               </span>
               
@@ -823,12 +720,11 @@ export function EnhancedListView() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-11 w-11"
+                    className="h-8 w-8"
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    aria-label="Go to next page"
                   >
-                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Next page</TooltipContent>
@@ -838,19 +734,18 @@ export function EnhancedListView() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-11 w-11"
+                    className="h-8 w-8"
                     onClick={() => setCurrentPage(totalPages)}
                     disabled={currentPage === totalPages || totalPages === 0}
-                    aria-label="Go to last page"
                   >
-                    <ChevronsRight className="h-4 w-4" aria-hidden="true" />
+                    <ChevronsRight className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Last page</TooltipContent>
               </Tooltip>
             </div>
           </div>
-        </nav>
+        </div>
       </div>
     </TooltipProvider>
   );
