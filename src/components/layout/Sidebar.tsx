@@ -34,6 +34,8 @@ import {
   Calendar, 
   Map,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Users,
   Building2,
   CheckSquare,
@@ -43,12 +45,19 @@ import {
   Sparkles,
   Lock,
   Check,
+  PanelLeftClose,
+  PanelLeft,
 } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
 import { Filter as FilterType, TableType, ViewType } from '@/types';
 import { getViewAvailability, getAvailableViews } from '@/lib/view-availability';
 
-export function Sidebar() {
+interface SidebarProps {
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}
+
+export function Sidebar({ collapsed = false, onToggleCollapse }: SidebarProps) {
   const {
     currentUser,
     currentTable,
@@ -107,7 +116,6 @@ export function Sidebar() {
     }
   };
 
-  // Get available views for current table
   const availableViews = getAvailableViews(currentTable);
 
   const viewTypeLabels: Record<ViewType, string> = {
@@ -117,11 +125,146 @@ export function Sidebar() {
     map: 'Map',
   };
 
+  // Collapsed sidebar view
+  if (collapsed) {
+    return (
+      <TooltipProvider>
+        <aside className="w-14 flex flex-col h-full bg-sidebar border-r border-sidebar-border">
+          {/* Toggle Button */}
+          <div className="p-2 border-b border-sidebar-border">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 mx-auto"
+                  onClick={onToggleCollapse}
+                >
+                  <PanelLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Expand sidebar</TooltipContent>
+            </Tooltip>
+          </div>
+
+          <ScrollArea className="flex-1">
+            <div className="p-2 space-y-2">
+              {/* Tables */}
+              <div className="space-y-1">
+                {tableItems.map((item) => (
+                  <Tooltip key={item.key}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={currentTable === item.key ? 'secondary' : 'ghost'}
+                        size="icon"
+                        className={`w-10 h-10 ${
+                          currentTable === item.key 
+                            ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
+                            : 'text-muted-foreground hover:text-[#003B5C]'
+                        }`}
+                        onClick={() => setCurrentTable(item.key)}
+                      >
+                        <span className={currentTable === item.key ? 'text-[#1BA9C4]' : item.color}>
+                          {item.icon}
+                        </span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">{item.label}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+
+              <Separator className="my-2" />
+
+              {/* Views */}
+              <div className="space-y-1">
+                {(['list', 'kanban', 'calendar', 'map'] as ViewType[]).map((viewType) => {
+                  const availability = getViewAvailability(currentTable, viewType);
+                  const isAvailable = availability.available;
+                  
+                  return (
+                    <Tooltip key={viewType}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`w-10 h-10 ${
+                            isAvailable 
+                              ? 'text-muted-foreground hover:text-[#003B5C] hover:bg-[#1BA9C4]/5' 
+                              : 'text-muted-foreground/40 cursor-not-allowed hover:bg-transparent'
+                          }`}
+                          onClick={() => isAvailable && setCurrentView(viewType)}
+                          disabled={!isAvailable}
+                        >
+                          {getViewIcon(viewType)}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        {isAvailable ? viewTypeLabels[viewType] : `${viewTypeLabels[viewType]} - Unavailable`}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+
+              <Separator className="my-2" />
+
+              {/* Filters indicator */}
+              {filters.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="relative flex justify-center">
+                      <Filter className="h-4 w-4 text-[#1BA9C4]" />
+                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-[#1BA9C4] hover:bg-[#1BA9C4]/90 border-0">
+                        {filters.length}
+                      </Badge>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{filters.length} active filter(s)</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </ScrollArea>
+          
+          {/* Sidebar Footer */}
+          <div className="p-2 border-t border-sidebar-border">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="w-8 h-8 mx-auto rounded-full bg-[#003B5C] flex items-center justify-center text-xs font-semibold text-white">
+                  G
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right">Gridlex CRM</TooltipContent>
+            </Tooltip>
+          </div>
+        </aside>
+      </TooltipProvider>
+    );
+  }
+
+  // Expanded sidebar view
   return (
     <TooltipProvider>
       <aside className="w-64 flex flex-col h-full bg-sidebar border-r border-sidebar-border">
         <ScrollArea className="flex-1">
           <div className="p-3 space-y-1">
+            {/* Toggle Button & Quick Actions */}
+            <div className="flex items-center justify-between mb-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={onToggleCollapse}
+                  >
+                    <PanelLeftClose className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Collapse sidebar</TooltipContent>
+              </Tooltip>
+            </div>
+
             {/* Quick Actions */}
             <div className="p-3 mb-2 rounded-lg bg-[#EBF5FA] border border-[#1BA9C4]/20">
               <div className="flex items-center gap-2 mb-1.5">

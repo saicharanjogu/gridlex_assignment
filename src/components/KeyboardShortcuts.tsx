@@ -20,6 +20,7 @@ const shortcutGroups = [
     shortcuts: [
       { keys: ['⌘', 'K'], description: 'Search' },
       { keys: ['⌘', '1-4'], description: 'Switch views' },
+      { keys: ['⌘', 'B'], description: 'Toggle sidebar' },
     ],
   },
   {
