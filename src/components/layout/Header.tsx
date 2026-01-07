@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Tooltip,
   TooltipContent,
@@ -22,10 +21,6 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
   Search, 
-  List,
-  LayoutGrid,
-  Calendar,
-  Map,
   Plus,
   Settings,
   Filter,
@@ -33,10 +28,12 @@ import {
   X,
   Bell,
 } from 'lucide-react';
-import { ViewType, TableType } from '@/types';
+import { TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
 import { ViewConfigDialog } from '@/components/dialogs/ViewConfigDialog';
 import { GridlexLogo } from '@/components/GridlexLogo';
+import { ViewSelector } from '@/components/ViewSelector';
+import { getFirstAvailableView } from '@/lib/view-availability';
 
 export function Header() {
   const {
@@ -54,12 +51,13 @@ export function Header() {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [viewConfigOpen, setViewConfigOpen] = useState(false);
 
-  const viewOptions: { value: ViewType; label: string; icon: React.ReactNode }[] = [
-    { value: 'list', label: 'Table', icon: <List className="h-4 w-4" /> },
-    { value: 'kanban', label: 'Board', icon: <LayoutGrid className="h-4 w-4" /> },
-    { value: 'calendar', label: 'Calendar', icon: <Calendar className="h-4 w-4" /> },
-    { value: 'map', label: 'Map', icon: <Map className="h-4 w-4" /> },
-  ];
+  // When table changes, check if current view is still available
+  useEffect(() => {
+    const availableView = getFirstAvailableView(currentTable, currentView);
+    if (availableView !== currentView) {
+      setCurrentView(availableView);
+    }
+  }, [currentTable, currentView, setCurrentView]);
 
   const tableOptions: { value: TableType | 'unified'; label: string }[] = [
     { value: 'contacts', label: 'Contacts' },
@@ -93,21 +91,14 @@ export function Header() {
             </Select>
           </div>
 
-          {/* Center section - View tabs */}
-          <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as ViewType)} className="hidden md:block">
-            <TabsList className="bg-muted/50 p-1">
-              {viewOptions.map((option) => (
-                <TabsTrigger 
-                  key={option.value} 
-                  value={option.value}
-                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-[#003B5C] px-4"
-                >
-                  {option.icon}
-                  <span className="hidden lg:inline">{option.label}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          {/* Center section - View selector with disabled states */}
+          <div className="hidden md:block">
+            <ViewSelector
+              currentView={currentView}
+              currentTable={currentTable}
+              onViewChange={setCurrentView}
+            />
+          </div>
 
           {/* Right section */}
           <div className="flex items-center gap-2">

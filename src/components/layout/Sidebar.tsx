@@ -20,6 +20,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Plus, 
   X, 
@@ -35,9 +41,12 @@ import {
   Bookmark,
   Filter,
   Sparkles,
+  Lock,
+  Check,
 } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
-import { Filter as FilterType, TableType } from '@/types';
+import { Filter as FilterType, TableType, ViewType } from '@/types';
+import { getViewAvailability, getAvailableViews } from '@/lib/view-availability';
 
 export function Sidebar() {
   const {
@@ -98,238 +107,385 @@ export function Sidebar() {
     }
   };
 
+  // Get available views for current table
+  const availableViews = getAvailableViews(currentTable);
+
+  const viewTypeLabels: Record<ViewType, string> = {
+    list: 'Table',
+    kanban: 'Board',
+    calendar: 'Calendar',
+    map: 'Map',
+  };
+
   return (
-    <aside className="w-64 flex flex-col h-full bg-sidebar border-r border-sidebar-border">
-      <ScrollArea className="flex-1">
-        <div className="p-3 space-y-1">
-          {/* Quick Actions */}
-          <div className="p-3 mb-2 rounded-lg bg-[#EBF5FA] border border-[#1BA9C4]/20">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Sparkles className="h-4 w-4 text-[#1BA9C4] flex-shrink-0" />
-              <span className="text-sm font-medium text-[#003B5C]">Quick Actions</span>
+    <TooltipProvider>
+      <aside className="w-64 flex flex-col h-full bg-sidebar border-r border-sidebar-border">
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-1">
+            {/* Quick Actions */}
+            <div className="p-3 mb-2 rounded-lg bg-[#EBF5FA] border border-[#1BA9C4]/20">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Sparkles className="h-4 w-4 text-[#1BA9C4] flex-shrink-0" />
+                <span className="text-sm font-medium text-[#003B5C]">Quick Actions</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">⌘K</kbd>
+                <span>search</span>
+                <span className="text-muted-foreground/50">•</span>
+                <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">?</kbd>
+                <span>shortcuts</span>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">⌘K</kbd>
-              <span>search</span>
-              <span className="text-muted-foreground/50">•</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">?</kbd>
-              <span>shortcuts</span>
-            </div>
-          </div>
 
-          {/* Tables Section */}
-          <Collapsible open={tablesOpen} onOpenChange={setTablesOpen}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
-              <span>Tables</span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${tablesOpen ? '' : '-rotate-90'}`} />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-0.5 mt-1">
-              {tableItems.map((item) => (
-                <Button
-                  key={item.key}
-                  variant={currentTable === item.key ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className={`w-full justify-start gap-3 h-9 ${
-                    currentTable === item.key 
-                      ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
-                      : 'text-muted-foreground hover:text-[#003B5C]'
-                  }`}
-                  onClick={() => setCurrentTable(item.key)}
-                >
-                  <span className={currentTable === item.key ? 'text-[#1BA9C4]' : item.color}>
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                </Button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-
-          <Separator className="my-3" />
-
-          {/* Saved Views Section */}
-          <Collapsible open={viewsOpen} onOpenChange={setViewsOpen}>
-            <div className="flex items-center justify-between w-full px-2 py-1.5">
-              <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
-                <span>Saved Views</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${viewsOpen ? '' : '-rotate-90'}`} />
+            {/* Tables Section */}
+            <Collapsible open={tablesOpen} onOpenChange={setTablesOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
+                <span>Tables</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${tablesOpen ? '' : '-rotate-90'}`} />
               </CollapsibleTrigger>
-              {currentUser.permissions.canConfigureViews && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 hover:bg-[#1BA9C4]/10 hover:text-[#1BA9C4]"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-            <CollapsibleContent className="space-y-0.5 mt-1">
-              {savedViewsForTable.map((view) => (
-                <Button
-                  key={view.id}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-[#003B5C] hover:bg-[#1BA9C4]/5"
-                  onClick={() => {
-                    setActiveViewConfig(view);
-                    setCurrentView(view.type);
-                  }}
-                >
-                  {getViewIcon(view.type)}
-                  <span className="flex-1 text-left truncate">{view.name}</span>
-                  {view.isDefault && (
-                    <Bookmark className="h-3 w-3 text-[#1BA9C4] fill-[#1BA9C4]" />
-                  )}
-                </Button>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-
-          <Separator className="my-3" />
-
-          {/* Filters Section */}
-          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <div className="flex items-center justify-between w-full px-2 py-1.5">
-              <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
-                <span>Filters</span>
-                {filters.length > 0 && (
-                  <Badge className="h-5 px-1.5 text-[10px] bg-[#1BA9C4] hover:bg-[#1BA9C4]/90 border-0">
-                    {filters.length}
-                  </Badge>
-                )}
-                <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? '' : '-rotate-90'}`} />
-              </CollapsibleTrigger>
-              {filters.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    clearFilters();
-                  }}
-                >
-                  Clear
-                </Button>
-              )}
-            </div>
-            <CollapsibleContent className="mt-1">
-              {/* Active Filters */}
-              {filters.length > 0 && (
-                <div className="space-y-1.5 mb-3">
-                  {filters.map((filter, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs bg-[#1BA9C4]/5 border border-[#1BA9C4]/10 rounded-md group"
+              <CollapsibleContent className="space-y-0.5 mt-1">
+                {tableItems.map((item) => {
+                  const itemAvailableViews = getAvailableViews(item.key);
+                  
+                  return (
+                    <Tooltip key={item.key}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={currentTable === item.key ? 'secondary' : 'ghost'}
+                          size="sm"
+                          className={`w-full justify-start gap-3 h-9 ${
+                            currentTable === item.key 
+                              ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
+                              : 'text-muted-foreground hover:text-[#003B5C]'
+                          }`}
+                          onClick={() => setCurrentTable(item.key)}
+                        >
+                          <span className={currentTable === item.key ? 'text-[#1BA9C4]' : item.color}>
+                            {item.icon}
+                          </span>
+                          <span className="flex-1 text-left">{item.label}</span>
+                          {/* View availability indicators */}
+                          <div className="flex items-center gap-0.5">
+                            {(['list', 'kanban', 'calendar', 'map'] as ViewType[]).map((viewType) => {
+                              const isAvailable = itemAvailableViews.includes(viewType);
+                              return (
+                                <div
+                                  key={viewType}
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isAvailable 
+                                      ? 'bg-[#1BA9C4]' 
+                                      : 'bg-muted-foreground/20'
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[200px]">
+                        <p className="font-medium mb-1">{item.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Available views: {itemAvailableViews.map(v => viewTypeLabels[v]).join(', ')}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+                
+                {/* Unified/All Records */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={currentTable === 'unified' ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className={`w-full justify-start gap-3 h-9 ${
+                        currentTable === 'unified' 
+                          ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
+                          : 'text-muted-foreground hover:text-[#003B5C]'
+                      }`}
+                      onClick={() => setCurrentTable('unified')}
                     >
-                      <Filter className="h-3 w-3 text-[#1BA9C4] flex-shrink-0" />
-                      <span className="flex-1 truncate">
-                        <span className="font-medium text-[#1BA9C4]">{filter.field}</span>
-                        <span className="text-muted-foreground"> {filter.operator} </span>
-                        <span className="font-medium">"{filter.value}"</span>
+                      <span className={currentTable === 'unified' ? 'text-[#1BA9C4]' : 'text-[#003B5C]'}>
+                        <LayoutGrid className="h-4 w-4" />
                       </span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-micro hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => removeFilter(index)}
+                      <span className="flex-1 text-left">All Records</span>
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#1BA9C4]" />
+                        ))}
+                      </div>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p className="font-medium mb-1">All Records</p>
+                    <p className="text-xs text-muted-foreground">
+                      All views available
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Separator className="my-3" />
+
+            {/* Available Views for Current Table */}
+            <div className="px-2 py-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Available Views
+              </p>
+              <div className="grid grid-cols-2 gap-1">
+                {(['list', 'kanban', 'calendar', 'map'] as ViewType[]).map((viewType) => {
+                  const availability = getViewAvailability(currentTable, viewType);
+                  const isAvailable = availability.available;
+                  
+                  return (
+                    <Tooltip key={viewType}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`h-8 justify-start gap-2 ${
+                            isAvailable 
+                              ? 'text-muted-foreground hover:text-[#003B5C] hover:bg-[#1BA9C4]/5' 
+                              : 'text-muted-foreground/40 cursor-not-allowed hover:bg-transparent'
+                          }`}
+                          onClick={() => isAvailable && setCurrentView(viewType)}
+                          disabled={!isAvailable}
+                        >
+                          {isAvailable ? (
+                            <Check className="h-3 w-3 text-[#1BA9C4]" />
+                          ) : (
+                            <Lock className="h-3 w-3" />
+                          )}
+                          <span className="text-xs">{viewTypeLabels[viewType]}</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-[200px]">
+                        {isAvailable ? (
+                          <p className="text-xs">Click to switch to {viewTypeLabels[viewType]} view</p>
+                        ) : (
+                          <div>
+                            <p className="font-medium text-xs mb-1">{viewTypeLabels[viewType]} - Unavailable</p>
+                            <p className="text-xs text-muted-foreground">{availability.reason}</p>
+                          </div>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Separator className="my-3" />
+
+            {/* Saved Views Section */}
+            <Collapsible open={viewsOpen} onOpenChange={setViewsOpen}>
+              <div className="flex items-center justify-between w-full px-2 py-1.5">
+                <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
+                  <span>Saved Views</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${viewsOpen ? '' : '-rotate-90'}`} />
+                </CollapsibleTrigger>
+                {currentUser.permissions.canConfigureViews && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 hover:bg-[#1BA9C4]/10 hover:text-[#1BA9C4]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+              <CollapsibleContent className="space-y-0.5 mt-1">
+                {savedViewsForTable.map((view) => {
+                  const viewAvailability = getViewAvailability(currentTable, view.type);
+                  const isAvailable = viewAvailability.available;
+                  
+                  return (
+                    <Tooltip key={view.id}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`w-full justify-start gap-3 h-9 ${
+                            isAvailable 
+                              ? 'text-muted-foreground hover:text-[#003B5C] hover:bg-[#1BA9C4]/5'
+                              : 'text-muted-foreground/40 cursor-not-allowed hover:bg-transparent'
+                          }`}
+                          onClick={() => {
+                            if (isAvailable) {
+                              setActiveViewConfig(view);
+                              setCurrentView(view.type);
+                            }
+                          }}
+                          disabled={!isAvailable}
+                        >
+                          <span className={!isAvailable ? 'opacity-40' : ''}>
+                            {getViewIcon(view.type)}
+                          </span>
+                          <span className="flex-1 text-left truncate">{view.name}</span>
+                          {!isAvailable && <Lock className="h-3 w-3" />}
+                          {view.isDefault && isAvailable && (
+                            <Bookmark className="h-3 w-3 text-[#1BA9C4] fill-[#1BA9C4]" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {!isAvailable && (
+                        <TooltipContent side="right" className="max-w-[200px]">
+                          <p className="font-medium text-xs mb-1">View Unavailable</p>
+                          <p className="text-xs text-muted-foreground">{viewAvailability.reason}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Separator className="my-3" />
+
+            {/* Filters Section */}
+            <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <div className="flex items-center justify-between w-full px-2 py-1.5">
+                <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
+                  <span>Filters</span>
+                  {filters.length > 0 && (
+                    <Badge className="h-5 px-1.5 text-[10px] bg-[#1BA9C4] hover:bg-[#1BA9C4]/90 border-0">
+                      {filters.length}
+                    </Badge>
+                  )}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? '' : '-rotate-90'}`} />
+                </CollapsibleTrigger>
+                {filters.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearFilters();
+                    }}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              <CollapsibleContent className="mt-1">
+                {/* Active Filters */}
+                {filters.length > 0 && (
+                  <div className="space-y-1.5 mb-3">
+                    {filters.map((filter, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 px-2 py-1.5 text-xs bg-[#1BA9C4]/5 border border-[#1BA9C4]/10 rounded-md group"
                       >
-                        <X className="h-3 w-3" />
+                        <Filter className="h-3 w-3 text-[#1BA9C4] flex-shrink-0" />
+                        <span className="flex-1 truncate">
+                          <span className="font-medium text-[#1BA9C4]">{filter.field}</span>
+                          <span className="text-muted-foreground"> {filter.operator} </span>
+                          <span className="font-medium">"{filter.value}"</span>
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-micro hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => removeFilter(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Filter */}
+                {!showFilterForm ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-[#1BA9C4] hover:bg-[#1BA9C4]/5"
+                    onClick={() => setShowFilterForm(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add filter</span>
+                  </Button>
+                ) : (
+                  <div className="space-y-3 p-3 bg-background border border-border rounded-lg shadow-sm">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Field</Label>
+                      <Select value={newFilterField} onValueChange={setNewFilterField}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Select field" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filterableFields.map((field) => (
+                            <SelectItem key={field.key} value={field.key}>
+                              {field.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Condition</Label>
+                      <Select value={newFilterOperator} onValueChange={(v) => setNewFilterOperator(v as FilterType['operator'])}>
+                        <SelectTrigger className="h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="equals">equals</SelectItem>
+                          <SelectItem value="contains">contains</SelectItem>
+                          <SelectItem value="gt">greater than</SelectItem>
+                          <SelectItem value="lt">less than</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Value</Label>
+                      <Input
+                        placeholder="Enter value"
+                        value={newFilterValue}
+                        onChange={(e) => setNewFilterValue(e.target.value)}
+                        className="h-8"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 h-8"
+                        onClick={() => setShowFilterForm(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1 h-8 bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0"
+                        onClick={handleAddFilter}
+                        disabled={!newFilterField || !newFilterValue}
+                      >
+                        Apply
                       </Button>
                     </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add Filter */}
-              {!showFilterForm ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-[#1BA9C4] hover:bg-[#1BA9C4]/5"
-                  onClick={() => setShowFilterForm(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add filter</span>
-                </Button>
-              ) : (
-                <div className="space-y-3 p-3 bg-background border border-border rounded-lg shadow-sm">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Field</Label>
-                    <Select value={newFilterField} onValueChange={setNewFilterField}>
-                      <SelectTrigger className="h-8">
-                        <SelectValue placeholder="Select field" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filterableFields.map((field) => (
-                          <SelectItem key={field.key} value={field.key}>
-                            {field.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Condition</Label>
-                    <Select value={newFilterOperator} onValueChange={(v) => setNewFilterOperator(v as FilterType['operator'])}>
-                      <SelectTrigger className="h-8">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="equals">equals</SelectItem>
-                        <SelectItem value="contains">contains</SelectItem>
-                        <SelectItem value="gt">greater than</SelectItem>
-                        <SelectItem value="lt">less than</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Value</Label>
-                    <Input
-                      placeholder="Enter value"
-                      value={newFilterValue}
-                      onChange={(e) => setNewFilterValue(e.target.value)}
-                      className="h-8"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 h-8"
-                      onClick={() => setShowFilterForm(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1 h-8 bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0"
-                      onClick={handleAddFilter}
-                      disabled={!newFilterField || !newFilterValue}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        </ScrollArea>
+        
+        {/* Sidebar Footer */}
+        <div className="p-3 border-t border-sidebar-border">
+          <div className="text-xs text-muted-foreground text-center">
+            <span className="font-medium"><span className="text-[#003B5C]">Grid</span><span className="text-[#1BA9C4]">lex</span></span> CRM v1.0
+          </div>
         </div>
-      </ScrollArea>
-      
-      {/* Sidebar Footer */}
-      <div className="p-3 border-t border-sidebar-border">
-        <div className="text-xs text-muted-foreground text-center">
-          <span className="font-medium"><span className="text-[#003B5C]">Grid</span><span className="text-[#1BA9C4]">lex</span></span> CRM v1.0
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </TooltipProvider>
   );
 }
