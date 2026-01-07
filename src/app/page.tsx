@@ -1,12 +1,24 @@
-import { MadeWithDyad } from "@/components/made-with-dyad";
+"use client";
+
+import { AppProvider } from '@/context/AppContext';
+import { Header } from '@/components/layout/Header';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { ViewContainer } from '@/components/views/ViewContainer';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-1 items-center sm:items-start">
-        <h1>Blank page</h1>
-      </main>
-      <MadeWithDyad />
-    </div>
+    <AppProvider>
+      <div className="flex flex-col h-screen">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar />
+          <main className="flex-1 overflow-hidden">
+            <ViewContainer />
+          </main>
+        </div>
+      </div>
+      <Toaster />
+    </AppProvider>
   );
 }
