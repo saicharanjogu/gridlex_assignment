@@ -11,6 +11,7 @@ import { DeleteConfirmDialog } from '@/components/dialogs/DeleteConfirmDialog';
 import { RecordViewDialog } from '@/components/dialogs/RecordViewDialog';
 import { OnboardingTour } from '@/components/OnboardingTour';
 import { KeyboardShortcuts } from '@/components/KeyboardShortcuts';
+import { LiveRegion } from '@/components/LiveRegion';
 
 function AppContent() {
   const {
@@ -26,12 +27,14 @@ function AppContent() {
     closeViewDialog,
     viewingRecord,
     currentTable,
+    currentView,
     openCreateDialog,
     setCurrentView,
   } = useApp();
 
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -41,6 +44,11 @@ function AppContent() {
     }
   }, []);
 
+  // Announce view changes to screen readers
+  useEffect(() => {
+    setAnnouncement(`Now viewing ${currentTable} in ${currentView} view`);
+  }, [currentTable, currentView]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -48,6 +56,7 @@ function AppContent() {
       if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         setShowKeyboardShortcuts(true);
+        setAnnouncement('Keyboard shortcuts dialog opened');
         return;
       }
 
@@ -57,22 +66,27 @@ function AppContent() {
           case 'n':
             e.preventDefault();
             openCreateDialog();
+            setAnnouncement('Create new record dialog opened');
             break;
           case '1':
             e.preventDefault();
             setCurrentView('list');
+            setAnnouncement('Switched to list view');
             break;
           case '2':
             e.preventDefault();
             setCurrentView('kanban');
+            setAnnouncement('Switched to kanban view');
             break;
           case '3':
             e.preventDefault();
             setCurrentView('calendar');
+            setAnnouncement('Switched to calendar view');
             break;
           case '4':
             e.preventDefault();
             setCurrentView('map');
+            setAnnouncement('Switched to map view');
             break;
         }
       }
@@ -84,11 +98,20 @@ function AppContent() {
 
   return (
     <>
+      {/* Live region for screen reader announcements */}
+      <LiveRegion message={announcement} />
+      
       <div className="flex flex-col h-screen bg-background">
         <Header />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-hidden">
+          <main 
+            id="main-content" 
+            className="flex-1 overflow-hidden"
+            role="main"
+            aria-label={`${currentTable} ${currentView} view`}
+            tabIndex={-1}
+          >
             <ViewContainer />
           </main>
         </div>
