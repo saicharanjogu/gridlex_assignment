@@ -64,7 +64,7 @@ const shortcutGroups: ShortcutGroup[] = [
 export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-[600px] md:max-w-[700px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
           <DialogDescription>
