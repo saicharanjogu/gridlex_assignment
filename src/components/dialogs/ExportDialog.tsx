@@ -30,7 +30,7 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
   const [exportSelected, setExportSelected] = useState(false);
 
   const records = getRecordsForCurrentTable();
-  const fields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
+  const fields = getFieldsForTable(currentTable);
 
   const getRecordValue = (record: RecordType, key: string): unknown => {
     return (record as unknown as { [key: string]: unknown })[key];

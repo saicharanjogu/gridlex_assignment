@@ -110,7 +110,7 @@ function AppContent() {
         mode="create"
         open={isCreateDialogOpen}
         onClose={closeCreateDialog}
-        tableType={currentTable === 'unified' ? 'contacts' : currentTable}
+        tableType={currentTable}
       />
 
       {/* Edit Dialog */}

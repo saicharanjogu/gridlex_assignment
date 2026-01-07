@@ -59,12 +59,11 @@ export function Header() {
     }
   }, [currentTable, currentView, setCurrentView]);
 
-  const tableOptions: { value: TableType | 'unified'; label: string }[] = [
+  const tableOptions: { value: TableType; label: string }[] = [
     { value: 'contacts', label: 'Contacts' },
     { value: 'opportunities', label: 'Opportunities' },
     { value: 'organizations', label: 'Organizations' },
     { value: 'tasks', label: 'Tasks' },
-    { value: 'unified', label: 'All Records' },
   ];
 
   return (
@@ -77,7 +76,7 @@ export function Header() {
             
             <Separator orientation="vertical" className="h-6" />
             
-            <Select value={currentTable} onValueChange={(v) => setCurrentTable(v as TableType | 'unified')}>
+            <Select value={currentTable} onValueChange={(v) => setCurrentTable(v as TableType)}>
               <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent font-medium hover:bg-muted/50 transition-colors">
                 <SelectValue />
               </SelectTrigger>

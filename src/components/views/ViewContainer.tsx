@@ -35,7 +35,7 @@ export function ViewContainer() {
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-[#003B5C] capitalize">
-            {currentTable === 'unified' ? 'All Records' : currentTable}
+            {currentTable}
           </h2>
           <Badge variant="secondary" className="text-xs font-normal">
             {records.length}

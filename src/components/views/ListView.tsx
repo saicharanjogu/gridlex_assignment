@@ -27,7 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ArrowUp, ArrowDown, MoreHorizontal, Edit, Trash2, Eye, Copy, ExternalLink } from 'lucide-react';
+import { ArrowUp, ArrowDown, MoreHorizontal, Edit, Trash2, Eye, Copy } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
 import { Record } from '@/types';
 import { toast } from 'sonner';
@@ -39,7 +39,6 @@ export function ListView() {
     filters,
     selectedRecords,
     toggleRecordSelection,
-    setSelectedRecords,
     selectAllRecords,
     clearSelection,
     getRecordsForCurrentTable,
@@ -57,7 +56,7 @@ export function ListView() {
   const [editValue, setEditValue] = useState('');
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
-  const fields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
+  const fields = getFieldsForTable(currentTable);
   const records = getRecordsForCurrentTable();
 
   const filteredRecords = useMemo(() => {
@@ -255,11 +254,6 @@ export function ListView() {
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
-                {currentTable === 'unified' && (
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider">
-                    Type
-                  </TableHead>
-                )}
                 {fields.filter(f => f.visible).map((field) => (
                   <TableHead key={field.key}>
                     <button
@@ -300,13 +294,6 @@ export function ListView() {
                       onCheckedChange={() => toggleRecordSelection(record.id)}
                     />
                   </TableCell>
-                  {currentTable === 'unified' && (
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs capitalize font-normal">
-                        {record.tableType}
-                      </Badge>
-                    </TableCell>
-                  )}
                   {fields.filter(f => f.visible).map((field) => {
                     const value = (record as Record)[field.key as keyof Record];
                     const isEditing = editingCell?.recordId === record.id && editingCell?.field === field.key;

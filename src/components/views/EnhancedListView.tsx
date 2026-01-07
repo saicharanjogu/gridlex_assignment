@@ -100,14 +100,14 @@ export function EnhancedListView() {
   
   const tableRef = useRef<HTMLDivElement>(null);
 
-  const baseFields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
+  const baseFields = getFieldsForTable(currentTable);
   const [columns, setColumns] = useState<ColumnConfig[]>(() => 
     baseFields.map((f, i) => ({ ...f, width: 150, pinned: false, order: i }))
   );
 
   // Reset state when currentTable changes
   useEffect(() => {
-    const newFields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
+    const newFields = getFieldsForTable(currentTable);
     setColumns(newFields.map((f, i) => ({ ...f, width: 150, pinned: false, order: i })));
     setCurrentPage(1);
     setSortField(null);
@@ -456,11 +456,6 @@ export function EnhancedListView() {
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
-                {currentTable === 'unified' && (
-                  <TableHead className="text-xs font-semibold uppercase tracking-wider">
-                    Type
-                  </TableHead>
-                )}
                 {visibleColumns.map((column, index) => (
                   <TableHead 
                     key={column.key}
@@ -546,13 +541,6 @@ export function EnhancedListView() {
                       onCheckedChange={() => toggleRecordSelection(record.id)}
                     />
                   </TableCell>
-                  {currentTable === 'unified' && (
-                    <TableCell className={densityClasses.cell}>
-                      <Badge variant="outline" className="text-xs capitalize font-normal">
-                        {record.tableType}
-                      </Badge>
-                    </TableCell>
-                  )}
                   {visibleColumns.map((column) => {
                     const value = (record as Record)[column.key as keyof Record];
                     const isEditing = editingCell?.recordId === record.id && editingCell?.field === column.key;

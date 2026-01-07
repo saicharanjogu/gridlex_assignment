@@ -36,7 +36,6 @@ import {
   Search, 
   X, 
   List, 
-  Layers, 
   Plus,
   Circle,
   Eye,
@@ -45,7 +44,7 @@ import {
   Locate,
   Map as MapIcon,
 } from 'lucide-react';
-import { Record, Contact, Organization, Opportunity, Task, TableType } from '@/types';
+import { Record, Contact, Organization, Opportunity, Task } from '@/types';
 
 type MapStyle = 'streets' | 'satellite' | 'terrain';
 
@@ -221,9 +220,6 @@ export function EnhancedMapView() {
     center: null,
     radius: 10,
   });
-  const [visibleLayers, setVisibleLayers] = useState<Set<TableType>>(
-    new Set(['contacts', 'opportunities', 'organizations', 'tasks'])
-  );
   const [isMounted, setIsMounted] = useState(false);
   const [hoveredRecord, setHoveredRecord] = useState<string | null>(null);
 
@@ -246,10 +242,6 @@ export function EnhancedMapView() {
 
   const filteredRecords = useMemo(() => {
     let result = records.filter((record) => record.location);
-
-    if (currentTable === 'unified') {
-      result = result.filter(r => visibleLayers.has(r.tableType));
-    }
 
     const query = (searchQuery || localSearch).toLowerCase();
     if (query) {
@@ -291,7 +283,7 @@ export function EnhancedMapView() {
     }
 
     return result;
-  }, [records, searchQuery, localSearch, filters, radiusSearch, visibleLayers, currentTable]);
+  }, [records, searchQuery, localSearch, filters, radiusSearch]);
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 3959;
@@ -353,34 +345,12 @@ export function EnhancedMapView() {
     return { bg: 'bg-primary', border: 'border-primary' };
   };
 
-  const getLayerColor = (tableType: TableType) => {
-    switch (tableType) {
-      case 'contacts': return '#3b82f6';
-      case 'opportunities': return '#10b981';
-      case 'organizations': return '#8b5cf6';
-      case 'tasks': return '#f59e0b';
-      default: return '#6b7280';
-    }
-  };
-
   const handleMarkerClick = (record: Record) => {
     setSelectedRecord(record);
   };
 
   const handleCardClick = (record: Record) => {
     setSelectedRecord(record);
-  };
-
-  const toggleLayer = (tableType: TableType) => {
-    setVisibleLayers(prev => {
-      const next = new Set(prev);
-      if (next.has(tableType)) {
-        next.delete(tableType);
-      } else {
-        next.add(tableType);
-      }
-      return next;
-    });
   };
 
   const mapBounds = useMemo(() => {
@@ -549,47 +519,6 @@ export function EnhancedMapView() {
                 </div>
               </SheetContent>
             </Sheet>
-            
-            {/* Layer Controls */}
-            {currentTable === 'unified' && (
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-10 w-10 shadow-md bg-background">
-                    <Layers className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-80">
-                  <SheetHeader>
-                    <SheetTitle>Map Layers</SheetTitle>
-                    <SheetDescription>
-                      Toggle visibility of different record types
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="space-y-4 mt-6">
-                    {(['contacts', 'opportunities', 'organizations', 'tasks'] as TableType[]).map((type) => (
-                      <div 
-                        key={type}
-                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                          visibleLayers.has(type) ? 'bg-muted/50 border-primary' : 'hover:bg-muted/30'
-                        }`}
-                        onClick={() => toggleLayer(type)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: getLayerColor(type) }}
-                          />
-                          <span className="capitalize font-medium">{type}</span>
-                        </div>
-                        <Badge variant="secondary">
-                          {records.filter(r => r.tableType === type && r.location).length}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </SheetContent>
-              </Sheet>
-            )}
             
             {/* Map Style */}
             <Select value={mapStyle} onValueChange={(v) => setMapStyle(v as MapStyle)}>

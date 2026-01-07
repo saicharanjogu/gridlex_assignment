@@ -83,7 +83,7 @@ interface RecordFormDialogProps {
 export function RecordFormDialog({ mode, open, onClose, record, tableType }: RecordFormDialogProps) {
   const { currentTable } = useApp();
   
-  const effectiveTableType = tableType || (record?.tableType) || (currentTable === 'unified' ? 'contacts' : currentTable);
+  const effectiveTableType = tableType || (record?.tableType) || currentTable;
 
   const getTitle = () => {
     const action = mode === 'create' ? 'Create' : 'Edit';

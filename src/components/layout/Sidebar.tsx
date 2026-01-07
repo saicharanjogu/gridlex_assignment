@@ -70,7 +70,7 @@ export function Sidebar() {
   const [viewsOpen, setViewsOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
 
-  const fields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
+  const fields = getFieldsForTable(currentTable);
   const filterableFields = fields.filter(f => f.filterable);
 
   const handleAddFilter = () => {
@@ -94,7 +94,7 @@ export function Sidebar() {
   ];
 
   const savedViewsForTable = viewConfigs.filter(
-    v => v.tableType === currentTable || v.tableType === 'unified'
+    v => v.tableType === currentTable
   );
 
   const getViewIcon = (type: string) => {
@@ -191,38 +191,6 @@ export function Sidebar() {
                     </Tooltip>
                   );
                 })}
-                
-                {/* Unified/All Records */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={currentTable === 'unified' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className={`w-full justify-start gap-3 h-9 ${
-                        currentTable === 'unified' 
-                          ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
-                          : 'text-muted-foreground hover:text-[#003B5C]'
-                      }`}
-                      onClick={() => setCurrentTable('unified')}
-                    >
-                      <span className={currentTable === 'unified' ? 'text-[#1BA9C4]' : 'text-[#003B5C]'}>
-                        <LayoutGrid className="h-4 w-4" />
-                      </span>
-                      <span className="flex-1 text-left">All Records</span>
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#1BA9C4]" />
-                        ))}
-                      </div>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p className="font-medium mb-1">All Records</p>
-                    <p className="text-xs text-muted-foreground">
-                      All views available
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
               </CollapsibleContent>
             </Collapsible>
 
