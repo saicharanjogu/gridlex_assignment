@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import {
@@ -10,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { MapPin, Search, X, List } from 'lucide-react';
+import { MapPin, Search, X, List, Layers } from 'lucide-react';
 import { Record, Contact, Organization, Opportunity, Task } from '@/types';
 
 export function MapView() {
@@ -59,10 +61,6 @@ export function MapView() {
     return result;
   }, [records, searchQuery, localSearch, filters]);
 
-  const getRecordName = (record: Record): string => {
-    return record.name;
-  };
-
   const getRecordSubtitle = (record: Record): string => {
     switch (record.tableType) {
       case 'contacts':
@@ -82,29 +80,63 @@ export function MapView() {
     }
   };
 
+  const getStatusColor = (record: Record) => {
+    let status = '';
+    switch (record.tableType) {
+      case 'contacts':
+        status = (record as Contact).status;
+        break;
+      case 'organizations':
+        status = (record as Organization).status;
+        break;
+      case 'opportunities':
+        status = (record as Opportunity).stage;
+        break;
+      case 'tasks':
+        status = (record as Task).status;
+        break;
+    }
+
+    if (['Active', 'Completed', 'Closed Won'].includes(status)) {
+      return 'bg-emerald-500';
+    }
+    if (['Pending', 'In Progress', 'Proposal', 'Negotiation'].includes(status)) {
+      return 'bg-amber-500';
+    }
+    if (['Inactive', 'Cancelled', 'Closed Lost'].includes(status)) {
+      return 'bg-red-500';
+    }
+    return 'bg-blue-500';
+  };
+
   const MapPlaceholder = () => (
-    <div className="relative w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-      <div className="absolute inset-0 opacity-10">
+    <div className="relative w-full h-full bg-gradient-to-br from-blue-50 to-slate-100 flex items-center justify-center overflow-hidden">
+      {/* Grid pattern */}
+      <div className="absolute inset-0 opacity-20">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
-            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.3" />
+            <pattern id="grid" width="5" height="5" patternUnits="userSpaceOnUse">
+              <path d="M 5 0 L 0 0 0 5" fill="none" stroke="currentColor" strokeWidth="0.2" />
             </pattern>
           </defs>
           <rect width="100" height="100" fill="url(#grid)" />
         </svg>
       </div>
       
+      {/* Map markers */}
       {filteredRecords.map((record, index) => {
         if (!record.location) return null;
         
         const left = ((record.location.lng + 130) / 60) * 100;
         const top = ((50 - record.location.lat) / 30) * 100;
+        const isSelected = selectedRecord?.id === record.id;
         
         return (
           <button
             key={record.id}
-            className="absolute transform -translate-x-1/2 -translate-y-full transition-micro hover:scale-110"
+            className={`absolute transform -translate-x-1/2 -translate-y-full transition-all duration-200 ${
+              isSelected ? 'scale-125 z-20' : 'hover:scale-110 z-10'
+            }`}
             style={{
               left: `${Math.min(Math.max(left, 5), 95)}%`,
               top: `${Math.min(Math.max(top, 10), 90)}%`,
@@ -112,15 +144,12 @@ export function MapView() {
             onClick={() => setSelectedRecord(record)}
           >
             <div className="relative">
-              <MapPin
-                className={`h-6 w-6 ${
-                  selectedRecord?.id === record.id
-                    ? 'text-foreground'
-                    : 'text-rose-500'
-                }`}
-                strokeWidth={1.5}
-                fill={selectedRecord?.id === record.id ? 'currentColor' : '#f43f5e'}
-              />
+              <div className={`w-8 h-8 rounded-full ${getStatusColor(record)} flex items-center justify-center shadow-lg border-2 border-white`}>
+                <span className="text-xs font-bold text-white">{index + 1}</span>
+              </div>
+              {isSelected && (
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-foreground rounded-full" />
+              )}
             </div>
           </button>
         );
@@ -128,53 +157,57 @@ export function MapView() {
       
       {filteredRecords.length === 0 && (
         <div className="text-center text-muted-foreground">
-          <MapPin className="h-8 w-8 mx-auto mb-2 opacity-30" strokeWidth={1.5} />
-          <p className="text-sm">No locations</p>
+          <MapPin className="h-12 w-12 mx-auto mb-4 opacity-30" strokeWidth={1} />
+          <p className="text-base font-medium">No locations</p>
+          <p className="text-sm">No records with location data found</p>
         </div>
       )}
     </div>
   );
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full bg-background">
       {/* Map Area */}
       <div className="flex-1 relative">
         <MapPlaceholder />
         
         {/* Map Controls */}
         <div className="absolute top-4 left-4 right-4 flex items-center gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" strokeWidth={1.5} />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
             <Input
               placeholder="Search locations..."
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
-              className="pl-9 h-9 text-sm bg-background/95 backdrop-blur border-border/50 shadow-sm"
+              className="pl-9 h-10 bg-background shadow-md border-border"
             />
             {localSearch && (
-              <button
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-micro"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
                 onClick={() => setLocalSearch('')}
               >
-                <X className="h-3.5 w-3.5" strokeWidth={1.5} />
-              </button>
+                <X className="h-4 w-4" strokeWidth={1.5} />
+              </Button>
             )}
           </div>
-          <button
+          <Button
+            variant={showList ? 'default' : 'outline'}
+            size="icon"
+            className="h-10 w-10 shadow-md"
             onClick={() => setShowList(!showList)}
-            className={`p-2 rounded-md transition-micro ${
-              showList 
-                ? 'bg-foreground text-background' 
-                : 'bg-background/95 text-muted-foreground hover:text-foreground border border-border/50'
-            } shadow-sm`}
           >
             <List className="h-4 w-4" strokeWidth={1.5} />
-          </button>
+          </Button>
+          <Button variant="outline" size="icon" className="h-10 w-10 shadow-md bg-background">
+            <Layers className="h-4 w-4" strokeWidth={1.5} />
+          </Button>
         </div>
 
-        {/* Record Count */}
-        <div className="absolute bottom-4 left-4 px-3 py-1.5 bg-background/95 backdrop-blur rounded-md shadow-sm border border-border/50">
-          <span className="text-xs font-medium text-muted-foreground">
+        {/* Stats */}
+        <div className="absolute bottom-4 left-4 px-4 py-2 bg-background rounded-lg shadow-md border border-border">
+          <span className="text-sm font-medium">
             {filteredRecords.length} locations
           </span>
         </div>
@@ -182,11 +215,11 @@ export function MapView() {
 
       {/* Side Panel */}
       {showList && (
-        <div className="w-72 border-l border-border/30 bg-background flex flex-col">
-          <div className="px-4 py-3 border-b border-border/30">
-            <h3 className="text-sm font-medium">Locations</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {filteredRecords.length} records
+        <div className="w-80 border-l border-border bg-background flex flex-col">
+          <div className="px-4 py-3 border-b border-border">
+            <h3 className="font-semibold">Locations</h3>
+            <p className="text-sm text-muted-foreground">
+              {filteredRecords.length} records with location data
             </p>
           </div>
           <ScrollArea className="flex-1">
@@ -194,26 +227,26 @@ export function MapView() {
               {filteredRecords.map((record, index) => (
                 <button
                   key={record.id}
-                  className={`w-full flex items-start gap-3 p-2.5 text-left rounded-lg transition-micro ${
+                  className={`w-full flex items-start gap-3 p-3 text-left rounded-lg transition-micro ${
                     selectedRecord?.id === record.id
-                      ? 'bg-accent'
-                      : 'hover:bg-accent/50'
+                      ? 'bg-primary/10 border border-primary/20'
+                      : 'hover:bg-muted border border-transparent'
                   }`}
                   onClick={() => setSelectedRecord(record)}
                 >
-                  <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-[10px] font-semibold flex-shrink-0 mt-0.5">
+                  <div className={`w-6 h-6 rounded-full ${getStatusColor(record)} flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0`}>
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-medium truncate">
-                      {getRecordName(record)}
+                      {record.name}
                     </h4>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+                    <p className="text-xs text-muted-foreground truncate">
                       {getRecordSubtitle(record)}
                     </p>
-                    <span className="text-[10px] text-muted-foreground/70 capitalize">
+                    <Badge variant="outline" className="mt-1.5 text-[10px] capitalize">
                       {record.tableType}
-                    </span>
+                    </Badge>
                   </div>
                 </button>
               ))}
@@ -226,58 +259,60 @@ export function MapView() {
       <Dialog open={!!selectedRecord} onOpenChange={() => setSelectedRecord(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold">
-              {selectedRecord && getRecordName(selectedRecord)}
-            </DialogTitle>
+            <DialogTitle>{selectedRecord?.name}</DialogTitle>
           </DialogHeader>
           {selectedRecord && (
             <div className="space-y-4 pt-2">
-              <p className="text-sm text-muted-foreground capitalize">
+              <Badge variant="outline" className="capitalize">
                 {selectedRecord.tableType}
-              </p>
+              </Badge>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
                 {selectedRecord.tableType === 'contacts' && (
                   <>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Email</p>
-                      <p className="font-medium">{(selectedRecord as Contact).email}</p>
+                      <p className="text-sm text-muted-foreground">Email</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Contact).email}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Phone</p>
-                      <p className="font-medium">{(selectedRecord as Contact).phone}</p>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Contact).phone}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Organization</p>
-                      <p className="font-medium">{(selectedRecord as Contact).organization}</p>
+                      <p className="text-sm text-muted-foreground">Organization</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Contact).organization}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Role</p>
-                      <p className="font-medium">{(selectedRecord as Contact).role}</p>
+                      <p className="text-sm text-muted-foreground">Role</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Contact).role}</p>
                     </div>
                   </>
                 )}
                 {selectedRecord.tableType === 'organizations' && (
                   <>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Industry</p>
-                      <p className="font-medium">{(selectedRecord as Organization).industry}</p>
+                      <p className="text-sm text-muted-foreground">Industry</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Organization).industry}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Contact</p>
-                      <p className="font-medium">{(selectedRecord as Organization).contactPerson}</p>
+                      <p className="text-sm text-muted-foreground">Contact</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Organization).contactPerson}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Phone</p>
-                      <p className="font-medium">{(selectedRecord as Organization).phone}</p>
+                      <p className="text-sm text-muted-foreground">Phone</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Organization).phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Organization).status}</p>
                     </div>
                   </>
                 )}
                 {selectedRecord.tableType === 'opportunities' && (
                   <>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Value</p>
-                      <p className="font-medium">
+                      <p className="text-sm text-muted-foreground">Value</p>
+                      <p className="font-medium text-sm">
                         {new Intl.NumberFormat('en-US', {
                           style: 'currency',
                           currency: 'USD',
@@ -286,39 +321,49 @@ export function MapView() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Stage</p>
-                      <p className="font-medium">{(selectedRecord as Opportunity).stage}</p>
+                      <p className="text-sm text-muted-foreground">Stage</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Opportunity).stage}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Assigned To</p>
-                      <p className="font-medium">{(selectedRecord as Opportunity).assignedTo}</p>
+                      <p className="text-sm text-muted-foreground">Assigned To</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Opportunity).assignedTo}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Close Date</p>
+                      <p className="font-medium text-sm">
+                        {new Date((selectedRecord as Opportunity).closeDate).toLocaleDateString()}
+                      </p>
                     </div>
                   </>
                 )}
                 {selectedRecord.tableType === 'tasks' && (
                   <>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Due Date</p>
-                      <p className="font-medium">
+                      <p className="text-sm text-muted-foreground">Due Date</p>
+                      <p className="font-medium text-sm">
                         {new Date((selectedRecord as Task).dueDate).toLocaleDateString()}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Priority</p>
-                      <p className="font-medium">{(selectedRecord as Task).priority}</p>
+                      <p className="text-sm text-muted-foreground">Priority</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Task).priority}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-xs mb-0.5">Assigned To</p>
-                      <p className="font-medium">{(selectedRecord as Task).assignedTo}</p>
+                      <p className="text-sm text-muted-foreground">Assigned To</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Task).assignedTo}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Status</p>
+                      <p className="font-medium text-sm">{(selectedRecord as Task).status}</p>
                     </div>
                   </>
                 )}
               </div>
 
               {selectedRecord.location && (
-                <div>
-                  <p className="text-muted-foreground text-xs mb-0.5">Coordinates</p>
-                  <p className="text-sm font-medium">
+                <div className="pt-2 border-t border-border">
+                  <p className="text-sm text-muted-foreground">Coordinates</p>
+                  <p className="font-medium text-sm">
                     {selectedRecord.location.lat.toFixed(4)}, {selectedRecord.location.lng.toFixed(4)}
                   </p>
                 </div>

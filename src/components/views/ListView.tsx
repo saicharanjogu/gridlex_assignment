@@ -5,13 +5,15 @@ import { useApp } from '@/context/AppContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ArrowUp, ArrowDown, MoreHorizontal, Edit, Trash, Eye, Copy } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, MoreHorizontal, Edit, Trash, Eye, Copy, ExternalLink } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
 import { Record } from '@/types';
 
@@ -103,27 +105,27 @@ export function ListView() {
   const getStatusStyle = (status: string) => {
     const statusLower = status.toLowerCase();
     if (['active', 'completed', 'closed won'].includes(statusLower)) {
-      return 'text-emerald-600 bg-emerald-50';
+      return 'bg-emerald-100 text-emerald-700 border-emerald-200';
     }
     if (['pending', 'in progress', 'proposal', 'negotiation', 'qualified'].includes(statusLower)) {
-      return 'text-amber-600 bg-amber-50';
+      return 'bg-amber-100 text-amber-700 border-amber-200';
     }
     if (['inactive', 'cancelled', 'closed lost'].includes(statusLower)) {
-      return 'text-rose-600 bg-rose-50';
+      return 'bg-red-100 text-red-700 border-red-200';
     }
     if (['lead', 'prospect'].includes(statusLower)) {
-      return 'text-blue-600 bg-blue-50';
+      return 'bg-blue-100 text-blue-700 border-blue-200';
     }
     if (['urgent', 'high'].includes(statusLower)) {
-      return 'text-rose-600 bg-rose-50';
+      return 'bg-red-100 text-red-700 border-red-200';
     }
     if (['medium'].includes(statusLower)) {
-      return 'text-amber-600 bg-amber-50';
+      return 'bg-amber-100 text-amber-700 border-amber-200';
     }
     if (['low'].includes(statusLower)) {
-      return 'text-slate-600 bg-slate-50';
+      return 'bg-slate-100 text-slate-700 border-slate-200';
     }
-    return 'text-slate-600 bg-slate-50';
+    return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
   const formatCellValue = (value: unknown, fieldType: string) => {
@@ -148,32 +150,32 @@ export function ListView() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-background">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border/30">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-3">
           <span className="text-sm text-muted-foreground">
             {filteredRecords.length} {filteredRecords.length === 1 ? 'record' : 'records'}
           </span>
           {selectedRecords.length > 0 && (
-            <span className="text-sm text-foreground font-medium">
+            <Badge variant="secondary" className="font-medium">
               {selectedRecords.length} selected
-            </span>
+            </Badge>
           )}
         </div>
         {currentUser.permissions.canEditRecords && selectedRecords.length > 0 && (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="h-7 text-xs">
-              <Edit className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="h-8 text-sm gap-1.5">
+              <Edit className="h-4 w-4" strokeWidth={1.5} />
               Edit
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-xs">
-              <Copy className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
+            <Button variant="ghost" size="sm" className="h-8 text-sm gap-1.5">
+              <Copy className="h-4 w-4" strokeWidth={1.5} />
               Duplicate
             </Button>
             {currentUser.permissions.canDeleteRecords && (
-              <Button variant="ghost" size="sm" className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50">
-                <Trash className="h-3.5 w-3.5 mr-1.5" strokeWidth={1.5} />
+              <Button variant="ghost" size="sm" className="h-8 text-sm gap-1.5 text-destructive hover:text-destructive">
+                <Trash className="h-4 w-4" strokeWidth={1.5} />
                 Delete
               </Button>
             )}
@@ -184,38 +186,41 @@ export function ListView() {
       {/* Table */}
       <div className="flex-1 overflow-auto">
         <table className="w-full">
-          <thead className="sticky top-0 bg-background z-10">
-            <tr className="border-b border-border/30">
-              <th className="w-12 px-4 py-2">
+          <thead className="sticky top-0 bg-muted/50 z-10">
+            <tr>
+              <th className="w-12 px-4 py-3 text-left">
                 <Checkbox
                   checked={selectedRecords.length === filteredRecords.length && filteredRecords.length > 0}
                   onCheckedChange={handleSelectAll}
-                  className="border-muted-foreground/30"
                 />
               </th>
               {currentTable === 'unified' && (
-                <th className="px-4 py-2 text-left">
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="px-4 py-3 text-left">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Type
                   </span>
                 </th>
               )}
               {fields.filter(f => f.visible).map((field) => (
-                <th key={field.key} className="px-4 py-2 text-left">
+                <th key={field.key} className="px-4 py-3 text-left">
                   <button
                     onClick={() => field.sortable && handleSort(field.key)}
                     disabled={!field.sortable}
-                    className={`flex items-center gap-1 text-[11px] font-medium uppercase tracking-wider transition-micro ${
+                    className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider transition-micro ${
                       field.sortable 
                         ? 'text-muted-foreground hover:text-foreground cursor-pointer' 
                         : 'text-muted-foreground cursor-default'
                     }`}
                   >
                     {field.label}
-                    {sortField === field.key && (
-                      sortOrder === 'asc' 
-                        ? <ArrowUp className="h-3 w-3" strokeWidth={1.5} />
-                        : <ArrowDown className="h-3 w-3" strokeWidth={1.5} />
+                    {field.sortable && (
+                      sortField === field.key ? (
+                        sortOrder === 'asc' 
+                          ? <ArrowUp className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          : <ArrowDown className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-0 group-hover:opacity-50" strokeWidth={1.5} />
+                      )
                     )}
                   </button>
                 </th>
@@ -223,32 +228,29 @@ export function ListView() {
               <th className="w-12"></th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {filteredRecords.map((record) => (
               <tr
                 key={record.id}
-                className={`border-b border-border/20 transition-micro ${
+                className={`group transition-micro ${
                   selectedRecords.includes(record.id) 
-                    ? 'bg-accent/30' 
-                    : hoveredRow === record.id 
-                      ? 'bg-accent/20' 
-                      : ''
+                    ? 'bg-primary/5' 
+                    : 'hover:bg-muted/50'
                 }`}
                 onMouseEnter={() => setHoveredRow(record.id)}
                 onMouseLeave={() => setHoveredRow(null)}
               >
-                <td className="px-4 py-2.5">
+                <td className="px-4 py-3">
                   <Checkbox
                     checked={selectedRecords.includes(record.id)}
                     onCheckedChange={() => toggleRecordSelection(record.id)}
-                    className="border-muted-foreground/30"
                   />
                 </td>
                 {currentTable === 'unified' && (
-                  <td className="px-4 py-2.5">
-                    <span className="text-xs text-muted-foreground capitalize">
+                  <td className="px-4 py-3">
+                    <Badge variant="outline" className="text-xs capitalize font-normal">
                       {record.tableType}
-                    </span>
+                    </Badge>
                   </td>
                 )}
                 {fields.filter(f => f.visible).map((field) => {
@@ -259,7 +261,7 @@ export function ListView() {
                   return (
                     <td
                       key={field.key}
-                      className="px-4 py-2.5"
+                      className="px-4 py-3"
                       onDoubleClick={() => {
                         if (currentUser.permissions.canEditRecords && !isStatusField) {
                           setEditingCell({ recordId: record.id, field: field.key });
@@ -276,49 +278,63 @@ export function ListView() {
                               setEditingCell(null);
                             }
                           }}
-                          className="h-7 text-sm border-0 bg-background shadow-sm"
+                          className="h-8 text-sm"
                         />
                       ) : isStatusField ? (
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusStyle(String(value))}`}>
+                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusStyle(String(value))}`}>
                           {String(value)}
                         </span>
                       ) : (
-                        <span className="text-sm text-foreground">
+                        <span className="text-sm">
                           {formatCellValue(value, field.type)}
                         </span>
                       )}
                     </td>
                   );
                 })}
-                <td className="px-4 py-2.5">
+                <td className="px-4 py-3">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button 
-                        className={`p-1 rounded transition-micro ${
-                          hoveredRow === record.id 
-                            ? 'opacity-100 text-muted-foreground hover:text-foreground' 
-                            : 'opacity-0'
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={`h-8 w-8 transition-micro ${
+                          hoveredRow === record.id ? 'opacity-100' : 'opacity-0'
                         }`}
                       >
                         <MoreHorizontal className="h-4 w-4" strokeWidth={1.5} />
-                      </button>
+                      </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem className="text-sm">
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem>
                         <Eye className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                        View
+                        View details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <ExternalLink className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                        Open in new tab
                       </DropdownMenuItem>
                       {currentUser.permissions.canEditRecords && (
-                        <DropdownMenuItem className="text-sm">
-                          <Edit className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                          Edit
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>
+                            <Edit className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Copy className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                            Duplicate
+                          </DropdownMenuItem>
+                        </>
                       )}
                       {currentUser.permissions.canDeleteRecords && (
-                        <DropdownMenuItem className="text-sm text-rose-600">
-                          <Trash className="h-4 w-4 mr-2" strokeWidth={1.5} />
-                          Delete
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash className="h-4 w-4 mr-2" strokeWidth={1.5} />
+                            Delete
+                          </DropdownMenuItem>
+                        </>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -329,9 +345,9 @@ export function ListView() {
         </table>
         
         {filteredRecords.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <p className="text-sm">No records found</p>
-            <p className="text-xs mt-1">Try adjusting your search or filters</p>
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <p className="text-base font-medium">No records found</p>
+            <p className="text-sm mt-1">Try adjusting your search or filters</p>
           </div>
         )}
       </div>
