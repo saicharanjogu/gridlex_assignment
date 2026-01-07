@@ -7,9 +7,12 @@ import { EnhancedKanbanView } from './EnhancedKanbanView';
 import { EnhancedCalendarView } from './EnhancedCalendarView';
 import { EnhancedMapView } from './EnhancedMapView';
 import { ViewSelector } from '@/components/ViewSelector';
+import { Badge } from '@/components/ui/badge';
 
 export function ViewContainer() {
-  const { currentView, currentTable, setCurrentView } = useApp();
+  const { currentView, currentTable, setCurrentView, getRecordsForCurrentTable } = useApp();
+  
+  const records = getRecordsForCurrentTable();
 
   const renderView = () => {
     switch (currentView) {
@@ -28,12 +31,15 @@ export function ViewContainer() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* View Selector Bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-[#003B5C] capitalize">
+      {/* Compact Header Bar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-background">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-[#003B5C] capitalize">
             {currentTable === 'unified' ? 'All Records' : currentTable}
           </h2>
+          <Badge variant="secondary" className="text-xs font-normal">
+            {records.length}
+          </Badge>
         </div>
         
         <ViewSelector
