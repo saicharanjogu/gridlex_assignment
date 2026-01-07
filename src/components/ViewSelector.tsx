@@ -13,16 +13,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { 
-  List,
-  LayoutGrid,
-  Calendar,
-  Map,
-  Lock,
-  Lightbulb,
-} from 'lucide-react';
+import { List, LayoutGrid, Calendar, Map, Lock, Lightbulb } from 'lucide-react';
 import { ViewType, TableType } from '@/types';
-import { getViewAvailability, viewConfigs } from '@/lib/view-availability';
+import { getViewAvailability } from '@/lib/view-availability';
 
 interface ViewSelectorProps {
   currentView: ViewType;
@@ -30,12 +23,12 @@ interface ViewSelectorProps {
   onViewChange: (view: ViewType) => void;
 }
 
-const viewLabels: Record<ViewType, string> = {
-  list: 'Table',
-  kanban: 'Board',
-  calendar: 'Calendar',
-  map: 'Map',
-};
+const viewConfigs: { type: ViewType; label: string }[] = [
+  { type: 'list', label: 'Table' },
+  { type: 'kanban', label: 'Board' },
+  { type: 'calendar', label: 'Calendar' },
+  { type: 'map', label: 'Map' },
+];
 
 function ViewIcon({ type, className = "h-4 w-4" }: { type: ViewType; className?: string }) {
   switch (type) {
@@ -69,12 +62,10 @@ export function ViewSelector({ currentView, currentTable, onViewChange }: ViewSe
                     onClick={() => onViewChange(config.type)}
                   >
                     <ViewIcon type={config.type} />
-                    <span className="text-xs font-medium hidden sm:inline">{viewLabels[config.type]}</span>
+                    <span className="text-xs font-medium hidden sm:inline">{config.label}</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {viewLabels[config.type]} View
-                </TooltipContent>
+                <TooltipContent side="bottom">{config.label} View</TooltipContent>
               </Tooltip>
             );
           }
@@ -88,13 +79,13 @@ export function ViewSelector({ currentView, currentTable, onViewChange }: ViewSe
                   className="h-8 px-3 gap-1.5 rounded-md text-muted-foreground/30 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground/30"
                 >
                   <ViewIcon type={config.type} />
-                  <span className="text-xs font-medium hidden sm:inline">{viewLabels[config.type]}</span>
+                  <span className="text-xs font-medium hidden sm:inline">{config.label}</span>
                   <Lock className="h-3 w-3 ml-0.5" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent side="bottom" align="end" className="w-64 p-3">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">{viewLabels[config.type]} View Unavailable</p>
+                  <p className="text-sm font-medium">{config.label} View Unavailable</p>
                   <p className="text-xs text-muted-foreground">{availability.reason}</p>
                   {availability.suggestion && (
                     <div className="flex items-start gap-2 p-2 bg-[#EBF5FA] rounded-md">
@@ -105,63 +96,6 @@ export function ViewSelector({ currentView, currentTable, onViewChange }: ViewSe
                 </div>
               </PopoverContent>
             </Popover>
-          );
-        })}
-      </div>
-    </TooltipProvider>
-  );
-}
-
-// Icon-only compact version
-export function ViewSelectorCompact({ currentView, currentTable, onViewChange }: ViewSelectorProps) {
-  return (
-    <TooltipProvider>
-      <div className="flex items-center gap-0.5 p-0.5 bg-muted/50 rounded-md">
-        {viewConfigs.map((config) => {
-          const availability = getViewAvailability(currentTable, config.type);
-          const isActive = currentView === config.type;
-          
-          if (availability.available) {
-            return (
-              <Tooltip key={config.type}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-7 w-7 rounded transition-all ${
-                      isActive 
-                        ? 'bg-background text-[#003B5C] shadow-sm' 
-                        : 'text-muted-foreground hover:text-[#003B5C] hover:bg-background/50'
-                    }`}
-                    onClick={() => onViewChange(config.type)}
-                  >
-                    <ViewIcon type={config.type} className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="text-xs">
-                  {viewLabels[config.type]}
-                </TooltipContent>
-              </Tooltip>
-            );
-          }
-          
-          return (
-            <Tooltip key={config.type}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded text-muted-foreground/25 cursor-not-allowed hover:bg-transparent"
-                  disabled
-                >
-                  <ViewIcon type={config.type} className="h-3.5 w-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs max-w-[180px]">
-                <p className="font-medium">{viewLabels[config.type]} - Unavailable</p>
-                <p className="text-muted-foreground">{availability.reason}</p>
-              </TooltipContent>
-            </Tooltip>
           );
         })}
       </div>

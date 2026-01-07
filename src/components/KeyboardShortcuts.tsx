@@ -1,13 +1,7 @@
 "use client";
 
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
@@ -16,86 +10,46 @@ interface KeyboardShortcutsProps {
   onClose: () => void;
 }
 
-interface ShortcutGroup {
-  title: string;
-  shortcuts: { keys: string[]; description: string }[];
-}
-
-const shortcutGroups: ShortcutGroup[] = [
-  {
-    title: 'Navigation',
-    shortcuts: [
-      { keys: ['⌘', 'K'], description: 'Open search' },
-      { keys: ['⌘', '1'], description: 'Switch to List view' },
-      { keys: ['⌘', '2'], description: 'Switch to Kanban view' },
-      { keys: ['⌘', '3'], description: 'Switch to Calendar view' },
-      { keys: ['⌘', '4'], description: 'Switch to Map view' },
-    ],
-  },
-  {
-    title: 'Records',
-    shortcuts: [
-      { keys: ['⌘', 'N'], description: 'Create new record' },
-      { keys: ['⌘', 'E'], description: 'Edit selected record' },
-      { keys: ['⌘', 'D'], description: 'Duplicate selected record' },
-      { keys: ['Delete'], description: 'Delete selected records' },
-      { keys: ['Escape'], description: 'Clear selection' },
-    ],
-  },
-  {
-    title: 'Table',
-    shortcuts: [
-      { keys: ['⌘', 'A'], description: 'Select all records' },
-      { keys: ['↑', '↓'], description: 'Navigate rows' },
-      { keys: ['Enter'], description: 'Open record details' },
-      { keys: ['Space'], description: 'Toggle row selection' },
-    ],
-  },
-  {
-    title: 'General',
-    shortcuts: [
-      { keys: ['⌘', 'S'], description: 'Save current view' },
-      { keys: ['⌘', 'Shift', 'E'], description: 'Export data' },
-      { keys: ['?'], description: 'Show keyboard shortcuts' },
-    ],
-  },
+const shortcuts = [
+  { group: 'Navigation', items: [
+    { keys: ['⌘', 'K'], desc: 'Open search' },
+    { keys: ['⌘', '1-4'], desc: 'Switch views' },
+  ]},
+  { group: 'Records', items: [
+    { keys: ['⌘', 'N'], desc: 'Create new' },
+    { keys: ['Enter'], desc: 'Open details' },
+    { keys: ['Delete'], desc: 'Delete selected' },
+  ]},
+  { group: 'General', items: [
+    { keys: ['⌘', 'A'], desc: 'Select all' },
+    { keys: ['Escape'], desc: 'Clear selection' },
+    { keys: ['?'], desc: 'Show shortcuts' },
+  ]},
 ];
 
 export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          <DialogDescription>
-            Use these shortcuts to navigate and manage records faster.
-          </DialogDescription>
+          <DialogDescription>Navigate and manage records faster</DialogDescription>
         </DialogHeader>
-        
-        <ScrollArea className="flex-1 overflow-auto pr-4">
-          <div className="space-y-6 py-4">
-            {shortcutGroups.map((group, index) => (
-              <div key={group.title}>
-                {index > 0 && <Separator className="mb-4" />}
-                <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                  {group.title}
-                </h4>
+        <ScrollArea className="max-h-[60vh]">
+          <div className="space-y-4 py-2">
+            {shortcuts.map((group, i) => (
+              <div key={group.group}>
+                {i > 0 && <Separator className="mb-3" />}
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2">{group.group}</h4>
                 <div className="space-y-2">
-                  {group.shortcuts.map((shortcut) => (
-                    <div
-                      key={shortcut.description}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm">{shortcut.description}</span>
+                  {group.items.map((s) => (
+                    <div key={s.desc} className="flex items-center justify-between">
+                      <span className="text-sm">{s.desc}</span>
                       <div className="flex items-center gap-1">
-                        {shortcut.keys.map((key, i) => (
-                          <React.Fragment key={key}>
-                            <kbd className="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded">
-                              {key}
-                            </kbd>
-                            {i < shortcut.keys.length - 1 && (
-                              <span className="text-muted-foreground">+</span>
-                            )}
+                        {s.keys.map((k, j) => (
+                          <React.Fragment key={k}>
+                            <kbd className="px-2 py-1 text-xs font-semibold bg-muted border rounded">{k}</kbd>
+                            {j < s.keys.length - 1 && <span className="text-muted-foreground">+</span>}
                           </React.Fragment>
                         ))}
                       </div>

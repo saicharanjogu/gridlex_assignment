@@ -23,15 +23,14 @@ interface DeleteConfirmDialogProps {
 
 export function DeleteConfirmDialog({ open, onClose, recordIds }: DeleteConfirmDialogProps) {
   const { deleteRecords, getRecordById } = useApp();
+  const count = recordIds.length;
+  const firstRecord = count === 1 ? getRecordById(recordIds[0]) : null;
 
   const handleDelete = () => {
     deleteRecords(recordIds);
-    toast.success(`${recordIds.length} record${recordIds.length > 1 ? 's' : ''} deleted successfully`);
+    toast.success(`${count} record${count > 1 ? 's' : ''} deleted`);
     onClose();
   };
-
-  const recordCount = recordIds.length;
-  const firstRecord = recordIds.length === 1 ? getRecordById(recordIds[0]) : null;
 
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
@@ -42,24 +41,16 @@ export function DeleteConfirmDialog({ open, onClose, recordIds }: DeleteConfirmD
               <Trash2 className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <AlertDialogTitle>
-                Delete {recordCount === 1 ? 'Record' : `${recordCount} Records`}
-              </AlertDialogTitle>
+              <AlertDialogTitle>Delete {count === 1 ? 'Record' : `${count} Records`}</AlertDialogTitle>
               <AlertDialogDescription className="mt-1">
-                {recordCount === 1 && firstRecord
-                  ? `Are you sure you want to delete "${firstRecord.name}"?`
-                  : `Are you sure you want to delete ${recordCount} records?`}
-                {' '}This action cannot be undone.
+                {count === 1 && firstRecord ? `Delete "${firstRecord.name}"?` : `Delete ${count} records?`} This cannot be undone.
               </AlertDialogDescription>
             </div>
           </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
+          <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>
