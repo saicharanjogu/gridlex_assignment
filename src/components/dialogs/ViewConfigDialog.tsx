@@ -73,7 +73,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
   const [viewName, setViewName] = useState('');
   const [viewType, setViewType] = useState<ViewType>('list');
   const [fields, setFields] = useState<FieldVisibility[]>([]);
-  const [defaultSort, setDefaultSort] = useState<string>('');
+  const [defaultSort, setDefaultSort] = useState<string>('none');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [shareMode, setShareMode] = useState<'private' | 'team' | 'public'>('private');
   const [isDefault, setIsDefault] = useState(false);
@@ -85,7 +85,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
       setFields(tableFields.map((f, i) => ({ ...f, visible: f.visible, order: i })));
       setViewType(currentView);
       setViewName(activeViewConfig?.name || `New ${currentView} View`);
-      setDefaultSort(activeViewConfig?.sortBy || '');
+      setDefaultSort(activeViewConfig?.sortBy || 'none');
       setSortOrder(activeViewConfig?.sortOrder || 'asc');
       setIsDefault(activeViewConfig?.isDefault || false);
     }
@@ -125,7 +125,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
       type: viewType,
       tableType: currentTable === 'unified' ? 'unified' : currentTable,
       visibleFields: fields.filter(f => f.visible).map(f => f.key),
-      sortBy: defaultSort || undefined,
+      sortBy: defaultSort === 'none' ? undefined : defaultSort,
       sortOrder: sortOrder,
       filters: [],
       savedBy: currentUser.id,
@@ -286,7 +286,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
                     <SelectValue placeholder="Select a field to sort by" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {fields.filter(f => f.sortable).map(field => (
                       <SelectItem key={field.key} value={field.key}>
                         {field.label}
@@ -296,7 +296,7 @@ export function ViewConfigDialog({ open, onClose }: ViewConfigDialogProps) {
                 </Select>
               </div>
 
-              {defaultSort && (
+              {defaultSort !== 'none' && (
                 <div className="space-y-2">
                   <Label>Sort Order</Label>
                   <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as 'asc' | 'desc')}>
