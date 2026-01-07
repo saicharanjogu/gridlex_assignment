@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash, Eye, GripVertical, Plus } from 'lucide-react';
-import { Record, Opportunity, Task } from '@/types';
+import { Record, Opportunity, Task, Contact, Organization } from '@/types';
 
 interface KanbanColumn {
   id: string;
@@ -170,6 +170,20 @@ export function KanbanView() {
     }).format(value);
   };
 
+  const getCardSubtitle = (record: Record): string => {
+    switch (record.tableType) {
+      case 'opportunities':
+      case 'tasks':
+        return (record as Opportunity | Task).assignedTo;
+      case 'contacts':
+        return (record as Contact).organization;
+      case 'organizations':
+        return (record as Organization).contactPerson;
+      default:
+        return '';
+    }
+  };
+
   const renderCard = (record: Record) => {
     const isOpportunity = record.tableType === 'opportunities';
     const isTask = record.tableType === 'tasks';
@@ -189,7 +203,7 @@ export function KanbanView() {
               <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-sm truncate">
-                  {(record as Opportunity | Task).name || (record as Record).name}
+                  {record.name}
                 </h4>
                 {isOpportunity && (
                   <p className="text-lg font-semibold text-primary mt-1">
@@ -210,9 +224,7 @@ export function KanbanView() {
                 )}
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" className="text-xs">
-                    {(record as Opportunity | Task).assignedTo || 
-                     (record as Record).organization || 
-                     (record as Record).contactPerson}
+                    {getCardSubtitle(record)}
                   </Badge>
                 </div>
                 {(isOpportunity || isTask) && (
