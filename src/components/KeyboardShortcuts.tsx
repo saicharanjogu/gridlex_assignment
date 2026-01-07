@@ -64,15 +64,15 @@ const shortcutGroups: ShortcutGroup[] = [
 export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] md:max-w-[700px] max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
           <DialogDescription>
             Use these shortcuts to navigate and manage records faster.
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <ScrollArea className="flex-1 overflow-auto pr-4">
           <div className="space-y-6 py-4">
             {shortcutGroups.map((group, index) => (
               <div key={group.title}>
