@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { Record, TableType } from '@/types';
+import { Users, TrendingUp, Building2, CheckSquare } from 'lucide-react';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -90,16 +91,33 @@ export function RecordFormDialog({ mode, open, onClose, record, tableType }: Rec
     return `${action} ${type.charAt(0).toUpperCase() + type.slice(1)}`;
   };
 
+  const getIcon = () => {
+    switch (effectiveTableType) {
+      case 'contacts': return <Users className="h-5 w-5 text-blue-500" />;
+      case 'opportunities': return <TrendingUp className="h-5 w-5 text-emerald-500" />;
+      case 'organizations': return <Building2 className="h-5 w-5 text-violet-500" />;
+      case 'tasks': return <CheckSquare className="h-5 w-5 text-amber-500" />;
+      default: return null;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{getTitle()}</DialogTitle>
-          <DialogDescription>
-            {mode === 'create' 
-              ? `Fill in the details to create a new ${effectiveTableType.slice(0, -1)}.`
-              : 'Make changes to the record below.'}
-          </DialogDescription>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg gradient-primary-subtle border border-primary/20 flex items-center justify-center">
+              {getIcon()}
+            </div>
+            <div>
+              <DialogTitle>{getTitle()}</DialogTitle>
+              <DialogDescription>
+                {mode === 'create' 
+                  ? `Fill in the details to create a new ${effectiveTableType.slice(0, -1)}.`
+                  : 'Make changes to the record below.'}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         
         {effectiveTableType === 'contacts' && (
@@ -202,7 +220,7 @@ function ContactForm({ mode, record, onClose }: { mode: 'create' | 'edit'; recor
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
@@ -288,7 +306,7 @@ function OpportunityForm({ mode, record, onClose }: { mode: 'create' | 'edit'; r
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
@@ -371,7 +389,7 @@ function OrganizationForm({ mode, record, onClose }: { mode: 'create' | 'edit'; 
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
@@ -463,7 +481,7 @@ function TaskForm({ mode, record, onClose }: { mode: 'create' | 'edit'; record?:
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>

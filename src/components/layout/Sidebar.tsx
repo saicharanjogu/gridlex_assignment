@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Bookmark,
   Filter,
+  Sparkles,
 } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
 import { Filter as FilterType, TableType } from '@/types';
@@ -76,11 +77,11 @@ export function Sidebar() {
     }
   };
 
-  const tableItems: { key: TableType; label: string; icon: React.ReactNode }[] = [
-    { key: 'contacts', label: 'Contacts', icon: <Users className="h-4 w-4" /> },
-    { key: 'opportunities', label: 'Opportunities', icon: <TrendingUp className="h-4 w-4" /> },
-    { key: 'organizations', label: 'Organizations', icon: <Building2 className="h-4 w-4" /> },
-    { key: 'tasks', label: 'Tasks', icon: <CheckSquare className="h-4 w-4" /> },
+  const tableItems: { key: TableType; label: string; icon: React.ReactNode; color: string }[] = [
+    { key: 'contacts', label: 'Contacts', icon: <Users className="h-4 w-4" />, color: 'text-blue-500' },
+    { key: 'opportunities', label: 'Opportunities', icon: <TrendingUp className="h-4 w-4" />, color: 'text-emerald-500' },
+    { key: 'organizations', label: 'Organizations', icon: <Building2 className="h-4 w-4" />, color: 'text-violet-500' },
+    { key: 'tasks', label: 'Tasks', icon: <CheckSquare className="h-4 w-4" />, color: 'text-amber-500' },
   ];
 
   const savedViewsForTable = viewConfigs.filter(
@@ -98,9 +99,20 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 flex flex-col h-full bg-muted/30 border-r border-border">
+    <aside className="w-64 flex flex-col h-full bg-sidebar border-r border-sidebar-border">
       <ScrollArea className="flex-1">
         <div className="p-3 space-y-1">
+          {/* Quick Actions */}
+          <div className="p-3 mb-2 rounded-lg gradient-primary-subtle border border-primary/10">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Quick Actions</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Press <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border">⌘K</kbd> to search or <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border">?</kbd> for shortcuts
+            </p>
+          </div>
+
           {/* Tables Section */}
           <Collapsible open={tablesOpen} onOpenChange={setTablesOpen}>
             <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
@@ -114,11 +126,15 @@ export function Sidebar() {
                   variant={currentTable === item.key ? 'secondary' : 'ghost'}
                   size="sm"
                   className={`w-full justify-start gap-3 h-9 ${
-                    currentTable === item.key ? 'bg-secondary text-foreground' : 'text-muted-foreground'
+                    currentTable === item.key 
+                      ? 'bg-primary/10 text-primary border border-primary/20' 
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                   onClick={() => setCurrentTable(item.key)}
                 >
-                  {item.icon}
+                  <span className={currentTable === item.key ? 'text-primary' : item.color}>
+                    {item.icon}
+                  </span>
                   <span>{item.label}</span>
                 </Button>
               ))}
@@ -136,7 +152,7 @@ export function Sidebar() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5"
+                    className="h-5 w-5 hover:bg-primary/10 hover:text-primary"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
@@ -153,7 +169,7 @@ export function Sidebar() {
                   key={view.id}
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-foreground"
+                  className="w-full justify-start gap-3 h-9 text-muted-foreground hover:text-foreground hover:bg-primary/5"
                   onClick={() => {
                     setActiveViewConfig(view);
                     setCurrentView(view.type);
@@ -177,7 +193,7 @@ export function Sidebar() {
               <div className="flex items-center gap-2">
                 <span>Filters</span>
                 {filters.length > 0 && (
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                  <Badge className="h-5 px-1.5 text-[10px] gradient-primary border-0">
                     {filters.length}
                   </Badge>
                 )}
@@ -187,7 +203,7 @@ export function Sidebar() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-5 px-1.5 text-[10px]"
+                    className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       clearFilters();
@@ -206,18 +222,18 @@ export function Sidebar() {
                   {filters.map((filter, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs bg-background border border-border rounded-md group"
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs bg-primary/5 border border-primary/10 rounded-md group"
                     >
-                      <Filter className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      <Filter className="h-3 w-3 text-primary flex-shrink-0" />
                       <span className="flex-1 truncate">
-                        <span className="font-medium">{filter.field}</span>
+                        <span className="font-medium text-primary">{filter.field}</span>
                         <span className="text-muted-foreground"> {filter.operator} </span>
                         <span className="font-medium">"{filter.value}"</span>
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-micro"
+                        className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-micro hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => removeFilter(index)}
                       >
                         <X className="h-3 w-3" />
@@ -232,14 +248,14 @@ export function Sidebar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start gap-2 h-9 text-muted-foreground"
+                  className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-primary hover:bg-primary/5"
                   onClick={() => setShowFilterForm(true)}
                 >
                   <Plus className="h-4 w-4" />
                   <span>Add filter</span>
                 </Button>
               ) : (
-                <div className="space-y-3 p-3 bg-background border border-border rounded-lg">
+                <div className="space-y-3 p-3 bg-background border border-border rounded-lg shadow-sm">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Field</Label>
                     <Select value={newFilterField} onValueChange={setNewFilterField}>
@@ -292,7 +308,7 @@ export function Sidebar() {
                     </Button>
                     <Button
                       size="sm"
-                      className="flex-1 h-8"
+                      className="flex-1 h-8 gradient-primary border-0"
                       onClick={handleAddFilter}
                       disabled={!newFilterField || !newFilterValue}
                     >
@@ -305,6 +321,13 @@ export function Sidebar() {
           </Collapsible>
         </div>
       </ScrollArea>
+      
+      {/* Sidebar Footer */}
+      <div className="p-3 border-t border-sidebar-border">
+        <div className="text-xs text-muted-foreground text-center">
+          <span className="text-gradient-primary font-medium">Gridlex</span> CRM v1.0
+        </div>
+      </div>
     </aside>
   );
 }

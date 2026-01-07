@@ -31,12 +31,13 @@ import {
   Filter,
   Download,
   X,
-  Keyboard,
+  Bell,
   HelpCircle,
 } from 'lucide-react';
 import { ViewType, TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
 import { ViewConfigDialog } from '@/components/dialogs/ViewConfigDialog';
+import { GridlexLogo } from '@/components/GridlexLogo';
 
 export function Header() {
   const {
@@ -74,18 +75,13 @@ export function Header() {
       <header className="border-b border-border bg-background">
         <div className="h-14 flex items-center justify-between px-4 gap-4">
           {/* Left section */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center">
-                <span className="text-sm font-semibold text-primary">D</span>
-              </div>
-              <span className="text-sm font-semibold text-foreground">DataView</span>
-            </div>
+          <div className="flex items-center gap-4">
+            <GridlexLogo />
             
             <Separator orientation="vertical" className="h-6" />
             
             <Select value={currentTable} onValueChange={(v) => setCurrentTable(v as TableType | 'unified')}>
-              <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent font-medium">
+              <SelectTrigger className="w-[160px] h-9 border-0 bg-transparent font-medium hover:bg-muted/50 transition-colors">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -100,12 +96,12 @@ export function Header() {
 
           {/* Center section - View tabs */}
           <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as ViewType)} className="hidden md:block">
-            <TabsList className="bg-muted/50">
+            <TabsList className="bg-muted/50 p-1">
               {viewOptions.map((option) => (
                 <TabsTrigger 
                   key={option.value} 
                   value={option.value}
-                  className="gap-2 data-[state=active]:bg-background"
+                  className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm px-4"
                 >
                   {option.icon}
                   <span className="hidden lg:inline">{option.label}</span>
@@ -122,7 +118,7 @@ export function Header() {
                 placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1"
+                className="w-[200px] lg:w-[280px] h-9 pl-9 pr-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/50"
               />
               {searchQuery && (
                 <Button
@@ -140,11 +136,11 @@ export function Header() {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-9 gap-2">
+                <Button variant="ghost" size="sm" className="h-9 gap-2 text-muted-foreground hover:text-foreground">
                   <Filter className="h-4 w-4" />
                   <span className="hidden sm:inline">Filter</span>
                   {filters.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                    <Badge className="ml-1 px-1.5 py-0.5 text-xs gradient-primary border-0">
                       {filters.length}
                     </Badge>
                   )}
@@ -159,7 +155,7 @@ export function Header() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9"
+                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
                     onClick={() => setViewConfigOpen(true)}
                   >
                     <Settings className="h-4 w-4" />
@@ -175,7 +171,7 @@ export function Header() {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9"
+                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
                     onClick={() => setExportDialogOpen(true)}
                   >
                     <Download className="h-4 w-4" />
@@ -185,8 +181,22 @@ export function Header() {
               </Tooltip>
             )}
 
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
+                >
+                  <Bell className="h-4 w-4" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Notifications</TooltipContent>
+            </Tooltip>
+
             {currentUser.permissions.canEditRecords && (
-              <Button size="sm" className="h-9 gap-2" onClick={openCreateDialog}>
+              <Button size="sm" className="h-9 gap-2 gradient-primary border-0 shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all" onClick={openCreateDialog}>
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">New Record</span>
               </Button>
@@ -194,16 +204,17 @@ export function Header() {
 
             <Separator orientation="vertical" className="h-6" />
 
-            {/* User Menu with Role Badge */}
+            {/* User Menu */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-xs font-medium text-primary-foreground">
+                <div className="flex items-center gap-2 cursor-pointer group">
+                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center text-xs font-semibold text-white shadow-md shadow-primary/25">
                     {currentUser.name.charAt(0)}
                   </div>
-                  <Badge variant="outline" className="hidden lg:flex text-xs capitalize">
-                    {currentUser.role}
-                  </Badge>
+                  <div className="hidden lg:block">
+                    <p className="text-sm font-medium leading-none">{currentUser.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{currentUser.role}</p>
+                  </div>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
