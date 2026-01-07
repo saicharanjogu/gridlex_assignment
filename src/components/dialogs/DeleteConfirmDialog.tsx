@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { AlertTriangle } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 
 interface DeleteConfirmDialogProps {
   open: boolean;
@@ -37,41 +37,30 @@ export function DeleteConfirmDialog({ open, onClose, recordIds }: DeleteConfirmD
     <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <div className="flex items-start gap-4">
-            <div 
-              className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0"
-              aria-hidden="true"
-            >
-              <AlertTriangle className="h-6 w-6 text-destructive" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+              <Trash2 className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <AlertDialogTitle className="text-lg">
-                Delete {recordCount === 1 ? 'Record' : `${recordCount} Records`}?
+              <AlertDialogTitle>
+                Delete {recordCount === 1 ? 'Record' : `${recordCount} Records`}
               </AlertDialogTitle>
-              <AlertDialogDescription className="mt-2 text-base">
-                {recordCount === 1 && firstRecord ? (
-                  <>
-                    You are about to delete <strong>&quot;{firstRecord.name}&quot;</strong>.
-                  </>
-                ) : (
-                  <>
-                    You are about to delete <strong>{recordCount} records</strong>.
-                  </>
-                )}
-                {' '}This action cannot be undone and all associated data will be permanently removed.
+              <AlertDialogDescription className="mt-1">
+                {recordCount === 1 && firstRecord
+                  ? `Are you sure you want to delete "${firstRecord.name}"?`
+                  : `Are you sure you want to delete ${recordCount} records?`}
+                {' '}This action cannot be undone.
               </AlertDialogDescription>
             </div>
           </div>
         </AlertDialogHeader>
-        <AlertDialogFooter className="mt-4">
-          <AlertDialogCancel className="min-w-[100px]">
-            Cancel
-          </AlertDialogCancel>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 min-w-[100px]"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            Delete {recordCount > 1 ? `${recordCount} Records` : 'Record'}
+            Delete
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

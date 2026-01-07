@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -25,7 +25,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,39 +32,38 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { Record, TableType } from '@/types';
-import { Users, TrendingUp, Building2, CheckSquare, AlertCircle } from 'lucide-react';
-import { VisuallyHidden } from '@/components/ui/visually-hidden';
+import { Users, TrendingUp, Building2, CheckSquare } from 'lucide-react';
 
 const contactSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  phone: z.string().min(1, 'Phone number is required'),
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().min(1, 'Phone is required'),
   organization: z.string().min(1, 'Organization is required'),
   role: z.string().min(1, 'Role is required'),
   status: z.enum(['Active', 'Inactive', 'Pending']),
 });
 
 const opportunitySchema = z.object({
-  name: z.string().min(1, 'Opportunity name is required').max(100, 'Name must be less than 100 characters'),
-  value: z.coerce.number().min(0, 'Value must be a positive number'),
+  name: z.string().min(1, 'Name is required'),
+  value: z.coerce.number().min(0, 'Value must be positive'),
   stage: z.enum(['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost']),
   closeDate: z.string().min(1, 'Close date is required'),
-  assignedTo: z.string().min(1, 'Assignee is required'),
+  assignedTo: z.string().min(1, 'Assigned to is required'),
 });
 
 const organizationSchema = z.object({
-  name: z.string().min(1, 'Organization name is required').max(100, 'Name must be less than 100 characters'),
+  name: z.string().min(1, 'Name is required'),
   industry: z.string().min(1, 'Industry is required'),
   contactPerson: z.string().min(1, 'Contact person is required'),
-  phone: z.string().min(1, 'Phone number is required'),
+  phone: z.string().min(1, 'Phone is required'),
   status: z.enum(['Active', 'Inactive', 'Prospect']),
 });
 
 const taskSchema = z.object({
-  name: z.string().min(1, 'Task name is required').max(200, 'Name must be less than 200 characters'),
+  name: z.string().min(1, 'Name is required'),
   dueDate: z.string().min(1, 'Due date is required'),
   priority: z.enum(['Low', 'Medium', 'High', 'Urgent']),
-  assignedTo: z.string().min(1, 'Assignee is required'),
+  assignedTo: z.string().min(1, 'Assigned to is required'),
   status: z.enum(['Pending', 'In Progress', 'Completed', 'Cancelled']),
 });
 
@@ -83,19 +81,9 @@ interface RecordFormDialogProps {
 }
 
 export function RecordFormDialog({ mode, open, onClose, record, tableType }: RecordFormDialogProps) {
-  const { currentTable } = useApp();
-  const firstInputRef = useRef<HTMLInputElement>(null);
+  const { currentTable, createRecord, updateRecord } = useApp();
   
   const effectiveTableType = tableType || (record?.tableType) || (currentTable === 'unified' ? 'contacts' : currentTable);
-
-  // Focus first input when dialog opens
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => {
-        firstInputRef.current?.focus();
-      }, 100);
-    }
-  }, [open]);
 
   const getTitle = () => {
     const action = mode === 'create' ? 'Create' : 'Edit';
@@ -103,30 +91,19 @@ export function RecordFormDialog({ mode, open, onClose, record, tableType }: Rec
     return `${action} ${type.charAt(0).toUpperCase() + type.slice(1)}`;
   };
 
-  const getDescription = () => {
-    if (mode === 'create') {
-      return `Fill in the details below to create a new ${effectiveTableType.slice(0, -1)}. Required fields are marked with an asterisk.`;
-    }
-    return `Update the details below. Required fields are marked with an asterisk.`;
-  };
-
   const getIcon = () => {
-    const iconProps = { className: "h-5 w-5", "aria-hidden": true as const };
     switch (effectiveTableType) {
-      case 'contacts': return <Users {...iconProps} className="h-5 w-5 text-blue-600" />;
-      case 'opportunities': return <TrendingUp {...iconProps} className="h-5 w-5 text-emerald-600" />;
-      case 'organizations': return <Building2 {...iconProps} className="h-5 w-5 text-violet-600" />;
-      case 'tasks': return <CheckSquare {...iconProps} className="h-5 w-5 text-amber-600" />;
+      case 'contacts': return <Users className="h-5 w-5 text-blue-500" />;
+      case 'opportunities': return <TrendingUp className="h-5 w-5 text-emerald-500" />;
+      case 'organizations': return <Building2 className="h-5 w-5 text-violet-500" />;
+      case 'tasks': return <CheckSquare className="h-5 w-5 text-amber-500" />;
       default: return null;
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent 
-        className="sm:max-w-[500px]"
-        aria-describedby="form-description"
-      >
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg gradient-primary-subtle border border-primary/20 flex items-center justify-center">
@@ -134,38 +111,33 @@ export function RecordFormDialog({ mode, open, onClose, record, tableType }: Rec
             </div>
             <div>
               <DialogTitle>{getTitle()}</DialogTitle>
-              <DialogDescription id="form-description">
-                {getDescription()}
+              <DialogDescription>
+                {mode === 'create' 
+                  ? `Fill in the details to create a new ${effectiveTableType.slice(0, -1)}.`
+                  : 'Make changes to the record below.'}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
         
         {effectiveTableType === 'contacts' && (
-          <ContactForm mode={mode} record={record} onClose={onClose} firstInputRef={firstInputRef} />
+          <ContactForm mode={mode} record={record} onClose={onClose} />
         )}
         {effectiveTableType === 'opportunities' && (
-          <OpportunityForm mode={mode} record={record} onClose={onClose} firstInputRef={firstInputRef} />
+          <OpportunityForm mode={mode} record={record} onClose={onClose} />
         )}
         {effectiveTableType === 'organizations' && (
-          <OrganizationForm mode={mode} record={record} onClose={onClose} firstInputRef={firstInputRef} />
+          <OrganizationForm mode={mode} record={record} onClose={onClose} />
         )}
         {effectiveTableType === 'tasks' && (
-          <TaskForm mode={mode} record={record} onClose={onClose} firstInputRef={firstInputRef} />
+          <TaskForm mode={mode} record={record} onClose={onClose} />
         )}
       </DialogContent>
     </Dialog>
   );
 }
 
-interface FormProps {
-  mode: 'create' | 'edit';
-  record?: Record | null;
-  onClose: () => void;
-  firstInputRef: React.RefObject<HTMLInputElement | null>;
-}
-
-function ContactForm({ mode, record, onClose, firstInputRef }: FormProps) {
+function ContactForm({ mode, record, onClose }: { mode: 'create' | 'edit'; record?: Record | null; onClose: () => void }) {
   const { createRecord, updateRecord } = useApp();
   
   const form = useForm<ContactFormData>({
@@ -194,122 +166,49 @@ function ContactForm({ mode, record, onClose, firstInputRef }: FormProps) {
     onClose();
   };
 
-  const hasErrors = Object.keys(form.formState.errors).length > 0;
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        {hasErrors && (
-          <div 
-            className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md"
-            role="alert"
-            aria-live="polite"
-          >
-            <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-            <span>Please correct the errors below to continue.</span>
-          </div>
-        )}
-        
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Name <span className="text-destructive" aria-hidden="true">*</span>
-              <VisuallyHidden>(required)</VisuallyHidden>
-            </FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="John Doe" 
-                {...field} 
-                ref={firstInputRef}
-                aria-required="true"
-                aria-invalid={!!form.formState.errors.name}
-              />
-            </FormControl>
+            <FormLabel>Name</FormLabel>
+            <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="email" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Email <span className="text-destructive" aria-hidden="true">*</span>
-              <VisuallyHidden>(required)</VisuallyHidden>
-            </FormLabel>
-            <FormControl>
-              <Input 
-                type="email" 
-                placeholder="john@example.com" 
-                {...field}
-                aria-required="true"
-                aria-invalid={!!form.formState.errors.email}
-              />
-            </FormControl>
+            <FormLabel>Email</FormLabel>
+            <FormControl><Input type="email" placeholder="john@example.com" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="phone" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Phone <span className="text-destructive" aria-hidden="true">*</span>
-              <VisuallyHidden>(required)</VisuallyHidden>
-            </FormLabel>
-            <FormControl>
-              <Input 
-                type="tel"
-                placeholder="+1 (555) 123-4567" 
-                {...field}
-                aria-required="true"
-                aria-invalid={!!form.formState.errors.phone}
-              />
-            </FormControl>
+            <FormLabel>Phone</FormLabel>
+            <FormControl><Input placeholder="+1234567890" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="organization" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Organization <span className="text-destructive" aria-hidden="true">*</span>
-              <VisuallyHidden>(required)</VisuallyHidden>
-            </FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="ACME Corp" 
-                {...field}
-                aria-required="true"
-                aria-invalid={!!form.formState.errors.organization}
-              />
-            </FormControl>
+            <FormLabel>Organization</FormLabel>
+            <FormControl><Input placeholder="ACME Corp" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="role" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Role <span className="text-destructive" aria-hidden="true">*</span>
-              <VisuallyHidden>(required)</VisuallyHidden>
-            </FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="Sales Manager" 
-                {...field}
-                aria-required="true"
-                aria-invalid={!!form.formState.errors.role}
-              />
-            </FormControl>
+            <FormLabel>Role</FormLabel>
+            <FormControl><Input placeholder="Sales Manager" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="status" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Status <span className="text-destructive" aria-hidden="true">*</span>
-              <VisuallyHidden>(required)</VisuallyHidden>
-            </FormLabel>
+            <FormLabel>Status</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger aria-required="true">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-              </FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
               <SelectContent>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
@@ -320,23 +219,15 @@ function ContactForm({ mode, record, onClose, firstInputRef }: FormProps) {
           </FormItem>
         )} />
         <DialogFooter className="pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            className="gradient-primary border-0 shadow-md shadow-primary/25"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Contact' : 'Save Changes'}
-          </Button>
+          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
   );
 }
 
-function OpportunityForm({ mode, record, onClose, firstInputRef }: FormProps) {
+function OpportunityForm({ mode, record, onClose }: { mode: 'create' | 'edit'; record?: Record | null; onClose: () => void }) {
   const { createRecord, updateRecord } = useApp();
   
   const form = useForm<OpportunityFormData>({
@@ -365,68 +256,28 @@ function OpportunityForm({ mode, record, onClose, firstInputRef }: FormProps) {
     onClose();
   };
 
-  const hasErrors = Object.keys(form.formState.errors).length > 0;
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        {hasErrors && (
-          <div 
-            className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md"
-            role="alert"
-            aria-live="polite"
-          >
-            <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-            <span>Please correct the errors below to continue.</span>
-          </div>
-        )}
-        
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Opportunity Name <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input 
-                placeholder="Enterprise Deal" 
-                {...field} 
-                ref={firstInputRef}
-                aria-required="true"
-              />
-            </FormControl>
+            <FormLabel>Opportunity Name</FormLabel>
+            <FormControl><Input placeholder="Enterprise Deal" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="value" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Value (USD) <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input 
-                type="number" 
-                placeholder="50000" 
-                {...field} 
-                value={field.value} 
-                onChange={e => field.onChange(Number(e.target.value))}
-                aria-required="true"
-              />
-            </FormControl>
-            <FormDescription>Enter the deal value in US dollars</FormDescription>
+            <FormLabel>Value ($)</FormLabel>
+            <FormControl><Input type="number" placeholder="50000" {...field} value={field.value} onChange={e => field.onChange(Number(e.target.value))} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="stage" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Stage <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
+            <FormLabel>Stage</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger aria-required="true">
-                  <SelectValue placeholder="Select stage" />
-                </SelectTrigger>
-              </FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Select stage" /></SelectTrigger></FormControl>
               <SelectContent>
                 <SelectItem value="Lead">Lead</SelectItem>
                 <SelectItem value="Qualified">Qualified</SelectItem>
@@ -441,42 +292,28 @@ function OpportunityForm({ mode, record, onClose, firstInputRef }: FormProps) {
         )} />
         <FormField control={form.control} name="closeDate" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Expected Close Date <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input type="date" {...field} aria-required="true" />
-            </FormControl>
+            <FormLabel>Close Date</FormLabel>
+            <FormControl><Input type="date" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="assignedTo" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Assigned To <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input placeholder="Jane Smith" {...field} aria-required="true" />
-            </FormControl>
+            <FormLabel>Assigned To</FormLabel>
+            <FormControl><Input placeholder="Jane Smith" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button 
-            type="submit" 
-            className="gradient-primary border-0 shadow-md shadow-primary/25"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Opportunity' : 'Save Changes'}
-          </Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
   );
 }
 
-function OrganizationForm({ mode, record, onClose, firstInputRef }: FormProps) {
+function OrganizationForm({ mode, record, onClose }: { mode: 'create' | 'edit'; record?: Record | null; onClose: () => void }) {
   const { createRecord, updateRecord } = useApp();
   
   const form = useForm<OrganizationFormData>({
@@ -505,77 +342,42 @@ function OrganizationForm({ mode, record, onClose, firstInputRef }: FormProps) {
     onClose();
   };
 
-  const hasErrors = Object.keys(form.formState.errors).length > 0;
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        {hasErrors && (
-          <div 
-            className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md"
-            role="alert"
-            aria-live="polite"
-          >
-            <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-            <span>Please correct the errors below to continue.</span>
-          </div>
-        )}
-        
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Organization Name <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input placeholder="ACME Corp" {...field} ref={firstInputRef} aria-required="true" />
-            </FormControl>
+            <FormLabel>Organization Name</FormLabel>
+            <FormControl><Input placeholder="ACME Corp" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="industry" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Industry <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input placeholder="Technology" {...field} aria-required="true" />
-            </FormControl>
+            <FormLabel>Industry</FormLabel>
+            <FormControl><Input placeholder="Technology" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="contactPerson" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Primary Contact <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input placeholder="John Doe" {...field} aria-required="true" />
-            </FormControl>
+            <FormLabel>Contact Person</FormLabel>
+            <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="phone" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Phone <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input type="tel" placeholder="+1 (555) 123-4567" {...field} aria-required="true" />
-            </FormControl>
+            <FormLabel>Phone</FormLabel>
+            <FormControl><Input placeholder="+1234567890" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="status" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Status <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
+            <FormLabel>Status</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger aria-required="true">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-              </FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
               <SelectContent>
                 <SelectItem value="Active">Active</SelectItem>
                 <SelectItem value="Inactive">Inactive</SelectItem>
@@ -587,20 +389,14 @@ function OrganizationForm({ mode, record, onClose, firstInputRef }: FormProps) {
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button 
-            type="submit" 
-            className="gradient-primary border-0 shadow-md shadow-primary/25"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Organization' : 'Save Changes'}
-          </Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
   );
 }
 
-function TaskForm({ mode, record, onClose, firstInputRef }: FormProps) {
+function TaskForm({ mode, record, onClose }: { mode: 'create' | 'edit'; record?: Record | null; onClose: () => void }) {
   const { createRecord, updateRecord } = useApp();
   
   const form = useForm<TaskFormData>({
@@ -629,55 +425,28 @@ function TaskForm({ mode, record, onClose, firstInputRef }: FormProps) {
     onClose();
   };
 
-  const hasErrors = Object.keys(form.formState.errors).length > 0;
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        {hasErrors && (
-          <div 
-            className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md"
-            role="alert"
-            aria-live="polite"
-          >
-            <AlertCircle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-            <span>Please correct the errors below to continue.</span>
-          </div>
-        )}
-        
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Task Name <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input placeholder="Follow-up Call" {...field} ref={firstInputRef} aria-required="true" />
-            </FormControl>
+            <FormLabel>Task Name</FormLabel>
+            <FormControl><Input placeholder="Follow-up Call" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="dueDate" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Due Date <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input type="date" {...field} aria-required="true" />
-            </FormControl>
+            <FormLabel>Due Date</FormLabel>
+            <FormControl><Input type="date" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="priority" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Priority <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
+            <FormLabel>Priority</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger aria-required="true">
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-              </FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger></FormControl>
               <SelectContent>
                 <SelectItem value="Low">Low</SelectItem>
                 <SelectItem value="Medium">Medium</SelectItem>
@@ -685,32 +454,21 @@ function TaskForm({ mode, record, onClose, firstInputRef }: FormProps) {
                 <SelectItem value="Urgent">Urgent</SelectItem>
               </SelectContent>
             </Select>
-            <FormDescription>Higher priority tasks appear first in lists</FormDescription>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="assignedTo" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Assigned To <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
-            <FormControl>
-              <Input placeholder="John Doe" {...field} aria-required="true" />
-            </FormControl>
+            <FormLabel>Assigned To</FormLabel>
+            <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )} />
         <FormField control={form.control} name="status" render={({ field }) => (
           <FormItem>
-            <FormLabel>
-              Status <span className="text-destructive" aria-hidden="true">*</span>
-            </FormLabel>
+            <FormLabel>Status</FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger aria-required="true">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-              </FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
               <SelectContent>
                 <SelectItem value="Pending">Pending</SelectItem>
                 <SelectItem value="In Progress">In Progress</SelectItem>
@@ -723,13 +481,7 @@ function TaskForm({ mode, record, onClose, firstInputRef }: FormProps) {
         )} />
         <DialogFooter className="pt-4">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button 
-            type="submit" 
-            className="gradient-primary border-0 shadow-md shadow-primary/25"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Task' : 'Save Changes'}
-          </Button>
+          <Button type="submit" className="gradient-primary border-0 shadow-md shadow-primary/25">{mode === 'create' ? 'Create' : 'Save Changes'}</Button>
         </DialogFooter>
       </form>
     </Form>
