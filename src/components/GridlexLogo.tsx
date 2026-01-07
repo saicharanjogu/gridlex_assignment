@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 
 interface GridlexLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -15,14 +15,14 @@ const sizes = {
   lg: { icon: 'w-10 h-10', text: 'text-xl' },
 };
 
-const squareVariants = {
+const squareVariants: Variants = {
   initial: { scale: 0, rotate: -45, opacity: 0 },
   animate: (i: number) => ({
     scale: 1,
     rotate: 0,
     opacity: 1,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 500,
       damping: 25,
       delay: i * 0.1,
@@ -31,7 +31,7 @@ const squareVariants = {
   hover: {
     scale: 1.1,
     transition: {
-      type: 'spring',
+      type: 'spring' as const,
       stiffness: 400,
       damping: 10,
     },
@@ -39,8 +39,6 @@ const squareVariants = {
 };
 
 export function GridlexLogo({ size = 'md', showText = true, animate = true }: GridlexLogoProps) {
-  const MotionWrapper = animate ? motion.div : 'div';
-  
   return (
     <motion.div 
       className="flex items-center gap-2"
@@ -111,7 +109,7 @@ export function GridlexLogo({ size = 'md', showText = true, animate = true }: Gr
           className={`font-bold ${sizes[size].text}`}
           initial={animate ? { opacity: 0, x: -10 } : undefined}
           animate={animate ? { opacity: 1, x: 0 } : undefined}
-          transition={{ delay: 0.3, type: 'spring', stiffness: 500, damping: 25 }}
+          transition={{ delay: 0.3, type: 'spring' as const, stiffness: 500, damping: 25 }}
         >
           <span className="text-[#003B5C]">Grid</span>
           <span className="text-[#1BA9C4]">lex</span>
