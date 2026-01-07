@@ -104,13 +104,17 @@ export function Sidebar() {
         <div className="p-3 space-y-1">
           {/* Quick Actions */}
           <div className="p-3 mb-2 rounded-lg gradient-primary-subtle border border-primary/10">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-4 w-4 text-primary" />
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sparkles className="h-4 w-4 text-primary flex-shrink-0" />
               <span className="text-sm font-medium text-primary">Quick Actions</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Press <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border">⌘K</kbd> to search or <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border">?</kbd> for shortcuts
-            </p>
+            <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">⌘K</kbd>
+              <span>search</span>
+              <span className="text-muted-foreground/50">•</span>
+              <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">?</kbd>
+              <span>shortcuts</span>
+            </div>
           </div>
 
           {/* Tables Section */}
