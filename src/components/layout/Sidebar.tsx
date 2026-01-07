@@ -145,24 +145,24 @@ export function Sidebar() {
 
           {/* Saved Views Section */}
           <Collapsible open={viewsOpen} onOpenChange={setViewsOpen}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
-              <span>Saved Views</span>
-              <div className="flex items-center gap-1">
-                {currentUser.permissions.canConfigureViews && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 hover:bg-primary/10 hover:text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                )}
+            <div className="flex items-center justify-between w-full px-2 py-1.5">
+              <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
+                <span>Saved Views</span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${viewsOpen ? '' : '-rotate-90'}`} />
-              </div>
-            </CollapsibleTrigger>
+              </CollapsibleTrigger>
+              {currentUser.permissions.canConfigureViews && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 hover:bg-primary/10 hover:text-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
             <CollapsibleContent className="space-y-0.5 mt-1">
               {savedViewsForTable.map((view) => (
                 <Button
@@ -189,32 +189,30 @@ export function Sidebar() {
 
           {/* Filters Section */}
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between w-full px-2 py-1.5">
+              <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-micro">
                 <span>Filters</span>
                 {filters.length > 0 && (
                   <Badge className="h-5 px-1.5 text-[10px] gradient-primary border-0">
                     {filters.length}
                   </Badge>
                 )}
-              </div>
-              <div className="flex items-center gap-1">
-                {filters.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      clearFilters();
-                    }}
-                  >
-                    Clear
-                  </Button>
-                )}
                 <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? '' : '-rotate-90'}`} />
-              </div>
-            </CollapsibleTrigger>
+              </CollapsibleTrigger>
+              {filters.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFilters();
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
             <CollapsibleContent className="mt-1">
               {/* Active Filters */}
               {filters.length > 0 && (
