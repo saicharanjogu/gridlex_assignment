@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/context/AppContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,7 @@ import {
 import { getFieldsForTable } from '@/data/mock-data';
 import { Record, FieldConfig } from '@/types';
 import { toast } from 'sonner';
+import { quickSpring, springTransition } from '@/lib/animations';
 
 type RowDensity = 'compact' | 'comfortable' | 'spacious';
 
@@ -68,6 +70,13 @@ interface ColumnConfig extends FieldConfig {
   pinned: boolean;
   order: number;
 }
+
+const rowVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 },
+  selected: { backgroundColor: 'rgba(27, 169, 196, 0.08)' },
+};
 
 export function EnhancedListView() {
   const {
@@ -105,7 +114,6 @@ export function EnhancedListView() {
     baseFields.map((f, i) => ({ ...f, width: 150, pinned: false, order: i }))
   );
 
-  // Reset state when currentTable changes
   useEffect(() => {
     const newFields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
     setColumns(newFields.map((f, i) => ({ ...f, width: 150, pinned: false, order: i })));
@@ -166,14 +174,12 @@ export function EnhancedListView() {
     return result;
   }, [records, searchQuery, filters, sortField, sortOrder]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const paginatedRecords = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, currentPage, pageSize]);
 
-  // Reset to page 1 when filtered records change significantly
   useEffect(() => {
     if (currentPage > Math.ceil(filteredRecords.length / pageSize)) {
       setCurrentPage(1);
@@ -320,16 +326,35 @@ export function EnhancedListView() {
     <TooltipProvider>
       <div className="flex flex-col h-full bg-background">
         {/* Enhanced Toolbar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <motion.div 
+          className="flex items-center justify-between px-4 py-3 border-b border-border"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={springTransition}
+        >
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
+            <motion.span 
+              className="text-sm text-muted-foreground"
+              key={filteredRecords.length}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               {filteredRecords.length} {filteredRecords.length === 1 ? 'record' : 'records'}
-            </span>
-            {selectedRecords.length > 0 && (
-              <Badge variant="secondary">
-                {selectedRecords.length} selected
-              </Badge>
-            )}
+            </motion.span>
+            <AnimatePresence>
+              {selectedRecords.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, x: -10 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, x: -10 }}
+                  transition={quickSpring}
+                >
+                  <Badge variant="secondary">
+                    {selectedRecords.length} selected
+                  </Badge>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
           
           <div className="flex items-center gap-2">
@@ -383,67 +408,75 @@ export function EnhancedListView() {
             </DropdownMenu>
 
             {/* Bulk Actions */}
-            {currentUser.permissions.canEditRecords && selectedRecords.length > 0 && (
-              <>
-                <div className="h-4 w-px bg-border" />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8"
-                      onClick={() => {
-                        if (selectedRecords.length === 1) {
-                          const record = paginatedRecords.find(r => r.id === selectedRecords[0]);
-                          if (record) openEditDialog(record);
-                        }
-                      }}
-                      disabled={selectedRecords.length !== 1}
-                    >
-                      <Edit className="h-4 w-4 mr-1.5" />
-                      Edit
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Edit selected record</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8"
-                      onClick={() => {
-                        selectedRecords.forEach(id => duplicateRecord(id));
-                        toast.success(`${selectedRecords.length} record(s) duplicated`);
-                        clearSelection();
-                      }}
-                    >
-                      <Copy className="h-4 w-4 mr-1.5" />
-                      Duplicate
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Duplicate selected records</TooltipContent>
-                </Tooltip>
-                {currentUser.permissions.canDeleteRecords && (
+            <AnimatePresence>
+              {currentUser.permissions.canEditRecords && selectedRecords.length > 0 && (
+                <motion.div
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={quickSpring}
+                >
+                  <div className="h-4 w-px bg-border" />
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 text-destructive hover:text-destructive"
-                        onClick={() => openDeleteDialog(selectedRecords)}
+                        className="h-8"
+                        onClick={() => {
+                          if (selectedRecords.length === 1) {
+                            const record = paginatedRecords.find(r => r.id === selectedRecords[0]);
+                            if (record) openEditDialog(record);
+                          }
+                        }}
+                        disabled={selectedRecords.length !== 1}
                       >
-                        <Trash2 className="h-4 w-4 mr-1.5" />
-                        Delete
+                        <Edit className="h-4 w-4 mr-1.5" />
+                        Edit
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent>Delete selected records</TooltipContent>
+                    <TooltipContent>Edit selected record</TooltipContent>
                   </Tooltip>
-                )}
-              </>
-            )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8"
+                        onClick={() => {
+                          selectedRecords.forEach(id => duplicateRecord(id));
+                          toast.success(`${selectedRecords.length} record(s) duplicated`);
+                          clearSelection();
+                        }}
+                      >
+                        <Copy className="h-4 w-4 mr-1.5" />
+                        Duplicate
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Duplicate selected records</TooltipContent>
+                  </Tooltip>
+                  {currentUser.permissions.canDeleteRecords && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-8 text-destructive hover:text-destructive"
+                          onClick={() => openDeleteDialog(selectedRecords)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1.5" />
+                          Delete
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete selected records</TooltipContent>
+                    </Tooltip>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
 
         {/* Table */}
         <div className="flex-1 overflow-auto" ref={tableRef}>
@@ -485,9 +518,13 @@ export function EnhancedListView() {
                           >
                             {column.label}
                             {sortField === column.key && (
-                              sortOrder === 'asc' 
-                                ? <ArrowUp className="h-3.5 w-3.5" />
-                                : <ArrowDown className="h-3.5 w-3.5" />
+                              <motion.div
+                                initial={{ rotate: 0 }}
+                                animate={{ rotate: sortOrder === 'desc' ? 180 : 0 }}
+                                transition={quickSpring}
+                              >
+                                <ArrowUp className="h-3.5 w-3.5" />
+                              </motion.div>
                             )}
                           </button>
                         </DropdownMenuTrigger>
@@ -530,135 +567,187 @@ export function EnhancedListView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedRecords.map((record) => (
-                <TableRow
-                  key={record.id}
-                  className={`transition-micro ${densityClasses.row} ${
-                    selectedRecords.includes(record.id) ? 'bg-primary/5' : ''
-                  }`}
-                  onMouseEnter={() => setHoveredRow(record.id)}
-                  onMouseLeave={() => setHoveredRow(null)}
-                  onDoubleClick={() => openViewDialog(record)}
-                >
-                  <TableCell className={densityClasses.cell} onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selectedRecords.includes(record.id)}
-                      onCheckedChange={() => toggleRecordSelection(record.id)}
-                    />
-                  </TableCell>
-                  {currentTable === 'unified' && (
-                    <TableCell className={densityClasses.cell}>
-                      <Badge variant="outline" className="text-xs capitalize font-normal">
-                        {record.tableType}
-                      </Badge>
-                    </TableCell>
-                  )}
-                  {visibleColumns.map((column) => {
-                    const value = (record as Record)[column.key as keyof Record];
-                    const isEditing = editingCell?.recordId === record.id && editingCell?.field === column.key;
-                    const isStatusField = ['status', 'stage', 'priority'].includes(column.key);
+              <AnimatePresence mode="popLayout">
+                {paginatedRecords.map((record, index) => {
+                  const isSelected = selectedRecords.includes(record.id);
+                  
+                  return (
+                    <motion.tr
+                      key={record.id}
+                      variants={rowVariants}
+                      initial="initial"
+                      animate="animate"
+                      exit="exit"
+                      transition={{ ...quickSpring, delay: index * 0.02 }}
+                      layout
+                      className={`transition-colors ${densityClasses.row} ${
+                        isSelected ? 'bg-[#1BA9C4]/5' : ''
+                      } hover:bg-muted/50`}
+                      onMouseEnter={() => setHoveredRow(record.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      onDoubleClick={() => openViewDialog(record)}
+                    >
+                      <TableCell className={densityClasses.cell} onClick={(e) => e.stopPropagation()}>
+                        <motion.div
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleRecordSelection(record.id)}
+                          />
+                        </motion.div>
+                      </TableCell>
+                      {currentTable === 'unified' && (
+                        <TableCell className={densityClasses.cell}>
+                          <Badge variant="outline" className="text-xs capitalize font-normal">
+                            {record.tableType}
+                          </Badge>
+                        </TableCell>
+                      )}
+                      {visibleColumns.map((column) => {
+                        const value = (record as Record)[column.key as keyof Record];
+                        const isEditing = editingCell?.recordId === record.id && editingCell?.field === column.key;
+                        const isStatusField = ['status', 'stage', 'priority'].includes(column.key);
 
-                    return (
-                      <TableCell
-                        key={column.key}
-                        className={densityClasses.cell}
-                        style={{ width: column.width, minWidth: column.width }}
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          if (currentUser.permissions.canEditRecords && !isStatusField) {
-                            setEditingCell({ recordId: record.id, field: column.key });
-                            setEditValue(String(value || ''));
-                          }
-                        }}
-                      >
-                        {isEditing ? (
-                          <Input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            autoFocus
-                            onBlur={() => handleInlineEdit(record, column.key, editValue)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleInlineEdit(record, column.key, editValue);
-                              } else if (e.key === 'Escape') {
-                                setEditingCell(null);
+                        return (
+                          <TableCell
+                            key={column.key}
+                            className={densityClasses.cell}
+                            style={{ width: column.width, minWidth: column.width }}
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              if (currentUser.permissions.canEditRecords && !isStatusField) {
+                                setEditingCell({ recordId: record.id, field: column.key });
+                                setEditValue(String(value || ''));
                               }
                             }}
-                            className="h-7 text-sm"
-                          />
-                        ) : isStatusField ? (
-                          <Badge variant={getStatusVariant(String(value))}>
-                            {String(value)}
-                          </Badge>
-                        ) : (
-                          <span className="truncate block">
-                            {formatCellValue(value, column.type)}
-                          </span>
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                  <TableCell className={densityClasses.cell} onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className={`h-7 w-7 transition-micro ${
-                            hoveredRow === record.id ? 'opacity-100' : 'opacity-0'
-                          }`}
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onClick={() => openViewDialog(record)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View details
-                        </DropdownMenuItem>
-                        {currentUser.permissions.canEditRecords && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => openEditDialog(record)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(record.id)}>
-                              <Copy className="h-4 w-4 mr-2" />
-                              Duplicate
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {currentUser.permissions.canDeleteRecords && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => openDeleteDialog([record.id])}
+                          >
+                            <AnimatePresence mode="wait">
+                              {isEditing ? (
+                                <motion.div
+                                  key="editing"
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.95 }}
+                                  transition={quickSpring}
+                                >
+                                  <Input
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    autoFocus
+                                    onBlur={() => handleInlineEdit(record, column.key, editValue)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleInlineEdit(record, column.key, editValue);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingCell(null);
+                                      }
+                                    }}
+                                    className="h-7 text-sm"
+                                  />
+                                </motion.div>
+                              ) : isStatusField ? (
+                                <motion.div
+                                  key="status"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.05 }}
+                                >
+                                  <Badge variant={getStatusVariant(String(value))}>
+                                    {String(value)}
+                                  </Badge>
+                                </motion.div>
+                              ) : (
+                                <motion.span 
+                                  key="value"
+                                  className="truncate block"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                >
+                                  {formatCellValue(value, column.type)}
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className={densityClasses.cell} onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: hoveredRow === record.id ? 1 : 0 }}
+                              transition={{ duration: 0.15 }}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-7 w-7"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </motion.div>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => openViewDialog(record)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View details
                             </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+                            {currentUser.permissions.canEditRecords && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => openEditDialog(record)}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicate(record.id)}>
+                                  <Copy className="h-4 w-4 mr-2" />
+                                  Duplicate
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {currentUser.permissions.canDeleteRecords && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="text-destructive"
+                                  onClick={() => openDeleteDialog([record.id])}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
             </TableBody>
           </Table>
           
           {paginatedRecords.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <motion.div 
+              className="flex flex-col items-center justify-center py-20 text-muted-foreground"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springTransition}
+            >
               <p className="text-base font-medium">No records found</p>
               <p className="text-sm mt-1">Try adjusting your search or filters</p>
-            </div>
+            </motion.div>
           )}
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
+        <motion.div 
+          className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...springTransition, delay: 0.1 }}
+        >
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Rows per page:</span>
             <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
@@ -684,29 +773,33 @@ export function EnhancedListView() {
             <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronsLeft className="h-4 w-4" />
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>First page</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>Previous page</TooltipContent>
               </Tooltip>
@@ -717,35 +810,39 @@ export function EnhancedListView() {
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>Next page</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                  >
-                    <ChevronsRight className="h-4 w-4" />
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </motion.div>
                 </TooltipTrigger>
                 <TooltipContent>Last page</TooltipContent>
               </Tooltip>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </TooltipProvider>
   );

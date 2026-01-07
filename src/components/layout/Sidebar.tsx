@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +51,6 @@ import {
   Filter,
   Sparkles,
   Lock,
-  Check,
   MoreHorizontal,
   Edit,
   Trash2,
@@ -62,6 +62,19 @@ import { Filter as FilterType, TableType, ViewType, ViewConfig } from '@/types';
 import { getViewAvailability, getAvailableViews } from '@/lib/view-availability';
 import { SaveViewDialog } from '@/components/dialogs/SaveViewDialog';
 import { toast } from 'sonner';
+import { quickSpring, springTransition } from '@/lib/animations';
+
+const listItemVariants = {
+  initial: { opacity: 0, x: -10 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -10 },
+};
+
+const filterBadgeVariants = {
+  initial: { opacity: 0, scale: 0.8, y: -5 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.8, y: 5 },
+};
 
 export function Sidebar() {
   const {
@@ -186,16 +199,22 @@ export function Sidebar() {
     setEditingView(null);
   };
 
-  const renderViewItem = (view: ViewConfig, showOwner = false) => {
+  const renderViewItem = (view: ViewConfig, showOwner = false, index = 0) => {
     const isActive = activeViewConfig?.id === view.id;
     const availability = getViewAvailability(currentTable, view.type);
     const isAvailable = availability.available;
     const isOwner = view.savedBy === currentUser.id;
 
     return (
-      <div
+      <motion.div
         key={view.id}
-        className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all ${
+        variants={listItemVariants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={{ ...quickSpring, delay: index * 0.03 }}
+        layout
+        className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-colors ${
           isActive 
             ? 'bg-[#1BA9C4]/10 border border-[#1BA9C4]/30' 
             : isAvailable 
@@ -203,10 +222,16 @@ export function Sidebar() {
               : 'opacity-50 cursor-not-allowed'
         }`}
         onClick={() => isAvailable && handleViewClick(view)}
+        whileHover={isAvailable ? { x: 2 } : undefined}
+        whileTap={isAvailable ? { scale: 0.98 } : undefined}
       >
-        <div className={`flex-shrink-0 ${isActive ? 'text-[#1BA9C4]' : 'text-muted-foreground'}`}>
+        <motion.div 
+          className={`flex-shrink-0 ${isActive ? 'text-[#1BA9C4]' : 'text-muted-foreground'}`}
+          animate={{ scale: isActive ? 1.1 : 1 }}
+          transition={quickSpring}
+        >
           {getViewIcon(view.type)}
-        </div>
+        </motion.div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
@@ -214,7 +239,13 @@ export function Sidebar() {
               {view.name}
             </span>
             {view.isDefault && (
-              <BookmarkCheck className="h-3 w-3 text-[#1BA9C4] flex-shrink-0" />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={quickSpring}
+              >
+                <BookmarkCheck className="h-3 w-3 text-[#1BA9C4] flex-shrink-0" />
+              </motion.div>
             )}
           </div>
           {showOwner && !isOwner && (
@@ -275,7 +306,7 @@ export function Sidebar() {
             </DropdownMenu>
           )}
         </div>
-      </div>
+      </motion.div>
     );
   };
 
@@ -285,7 +316,12 @@ export function Sidebar() {
         <ScrollArea className="flex-1">
           <div className="p-3 space-y-1">
             {/* Quick Actions */}
-            <div className="p-3 mb-2 rounded-lg bg-[#EBF5FA] border border-[#1BA9C4]/20">
+            <motion.div 
+              className="p-3 mb-2 rounded-lg bg-[#EBF5FA] border border-[#1BA9C4]/20"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={springTransition}
+            >
               <div className="flex items-center gap-2 mb-1.5">
                 <Sparkles className="h-4 w-4 text-[#1BA9C4] flex-shrink-0" />
                 <span className="text-sm font-medium text-[#003B5C]">Quick Actions</span>
@@ -297,85 +333,124 @@ export function Sidebar() {
                 <kbd className="px-1.5 py-0.5 text-[10px] bg-background rounded border shrink-0">?</kbd>
                 <span>shortcuts</span>
               </div>
-            </div>
+            </motion.div>
 
             {/* Tables Section */}
             <Collapsible open={tablesOpen} onOpenChange={setTablesOpen}>
               <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
                 <span>Tables</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${tablesOpen ? '' : '-rotate-90'}`} />
+                <motion.div
+                  animate={{ rotate: tablesOpen ? 0 : -90 }}
+                  transition={quickSpring}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </motion.div>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-0.5 mt-1">
-                {tableItems.map((item) => {
-                  const itemAvailableViews = getAvailableViews(item.key);
-                  
-                  return (
-                    <Tooltip key={item.key}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={currentTable === item.key ? 'secondary' : 'ghost'}
-                          size="sm"
-                          className={`w-full justify-start gap-3 h-9 ${
-                            currentTable === item.key 
-                              ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
-                              : 'text-muted-foreground hover:text-[#003B5C]'
-                          }`}
-                          onClick={() => setCurrentTable(item.key)}
-                        >
-                          <span className={currentTable === item.key ? 'text-[#1BA9C4]' : item.color}>
-                            {item.icon}
-                          </span>
-                          <span className="flex-1 text-left">{item.label}</span>
-                          <div className="flex items-center gap-0.5">
-                            {(['list', 'kanban', 'calendar', 'map'] as ViewType[]).map((viewType) => {
-                              const isAvailable = itemAvailableViews.includes(viewType);
-                              return (
-                                <div
-                                  key={viewType}
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    isAvailable 
-                                      ? 'bg-[#1BA9C4]' 
-                                      : 'bg-muted-foreground/20'
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-[200px]">
-                        <p className="font-medium mb-1">{item.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Available views: {itemAvailableViews.map(v => viewTypeLabels[v]).join(', ')}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+                <AnimatePresence>
+                  {tableItems.map((item, index) => {
+                    const itemAvailableViews = getAvailableViews(item.key);
+                    
+                    return (
+                      <Tooltip key={item.key}>
+                        <TooltipTrigger asChild>
+                          <motion.div
+                            variants={listItemVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            transition={{ ...quickSpring, delay: index * 0.03 }}
+                          >
+                            <Button
+                              variant={currentTable === item.key ? 'secondary' : 'ghost'}
+                              size="sm"
+                              className={`w-full justify-start gap-3 h-9 ${
+                                currentTable === item.key 
+                                  ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
+                                  : 'text-muted-foreground hover:text-[#003B5C]'
+                              }`}
+                              onClick={() => setCurrentTable(item.key)}
+                            >
+                              <motion.span 
+                                className={currentTable === item.key ? 'text-[#1BA9C4]' : item.color}
+                                animate={{ scale: currentTable === item.key ? 1.1 : 1 }}
+                                transition={quickSpring}
+                              >
+                                {item.icon}
+                              </motion.span>
+                              <span className="flex-1 text-left">{item.label}</span>
+                              <div className="flex items-center gap-0.5">
+                                {(['list', 'kanban', 'calendar', 'map'] as ViewType[]).map((viewType) => {
+                                  const isAvailable = itemAvailableViews.includes(viewType);
+                                  return (
+                                    <motion.div
+                                      key={viewType}
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        isAvailable 
+                                          ? 'bg-[#1BA9C4]' 
+                                          : 'bg-muted-foreground/20'
+                                      }`}
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      transition={{ delay: 0.1 + index * 0.02 }}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </Button>
+                          </motion.div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[200px]">
+                          <p className="font-medium mb-1">{item.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Available views: {itemAvailableViews.map(v => viewTypeLabels[v]).join(', ')}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </AnimatePresence>
                 
                 {/* Unified/All Records */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant={currentTable === 'unified' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className={`w-full justify-start gap-3 h-9 ${
-                        currentTable === 'unified' 
-                          ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
-                          : 'text-muted-foreground hover:text-[#003B5C]'
-                      }`}
-                      onClick={() => setCurrentTable('unified')}
+                    <motion.div
+                      variants={listItemVariants}
+                      initial="initial"
+                      animate="animate"
+                      transition={{ ...quickSpring, delay: 0.15 }}
                     >
-                      <span className={currentTable === 'unified' ? 'text-[#1BA9C4]' : 'text-[#003B5C]'}>
-                        <LayoutGrid className="h-4 w-4" />
-                      </span>
-                      <span className="flex-1 text-left">All Records</span>
-                      <div className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4].map((i) => (
-                          <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#1BA9C4]" />
-                        ))}
-                      </div>
-                    </Button>
+                      <Button
+                        variant={currentTable === 'unified' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className={`w-full justify-start gap-3 h-9 ${
+                          currentTable === 'unified' 
+                            ? 'bg-[#1BA9C4]/10 text-[#003B5C] border border-[#1BA9C4]/20' 
+                            : 'text-muted-foreground hover:text-[#003B5C]'
+                        }`}
+                        onClick={() => setCurrentTable('unified')}
+                      >
+                        <motion.span 
+                          className={currentTable === 'unified' ? 'text-[#1BA9C4]' : 'text-[#003B5C]'}
+                          animate={{ scale: currentTable === 'unified' ? 1.1 : 1 }}
+                          transition={quickSpring}
+                        >
+                          <LayoutGrid className="h-4 w-4" />
+                        </motion.span>
+                        <span className="flex-1 text-left">All Records</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4].map((i) => (
+                            <motion.div 
+                              key={i} 
+                              className="w-1.5 h-1.5 rounded-full bg-[#1BA9C4]"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ delay: 0.2 + i * 0.02 }}
+                            />
+                          ))}
+                        </div>
+                      </Button>
+                    </motion.div>
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     <p className="font-medium mb-1">All Records</p>
@@ -394,28 +469,45 @@ export function Sidebar() {
               <div className="flex items-center justify-between w-full px-2 py-1.5">
                 <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
                   <span>Saved Views</span>
-                  {savedViewsForTable.length > 0 && (
-                    <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
-                      {savedViewsForTable.length}
-                    </Badge>
-                  )}
-                  <ChevronDown className={`h-4 w-4 transition-transform ${viewsOpen ? '' : '-rotate-90'}`} />
+                  <AnimatePresence mode="wait">
+                    {savedViewsForTable.length > 0 && (
+                      <motion.div
+                        key={savedViewsForTable.length}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.8, opacity: 0 }}
+                        transition={quickSpring}
+                      >
+                        <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                          {savedViewsForTable.length}
+                        </Badge>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <motion.div
+                    animate={{ rotate: viewsOpen ? 0 : -90 }}
+                    transition={quickSpring}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </motion.div>
                 </CollapsibleTrigger>
                 {currentUser.permissions.canConfigureViews && (
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 hover:bg-[#1BA9C4]/10 hover:text-[#1BA9C4]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingView(null);
-                          setSaveDialogOpen(true);
-                        }}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
+                      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 hover:bg-[#1BA9C4]/10 hover:text-[#1BA9C4]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingView(null);
+                            setSaveDialogOpen(true);
+                          }}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </motion.div>
                     </TooltipTrigger>
                     <TooltipContent>Save current view</TooltipContent>
                   </Tooltip>
@@ -429,7 +521,9 @@ export function Sidebar() {
                       My Views
                     </p>
                     <div className="space-y-0.5">
-                      {myViews.map((view) => renderViewItem(view))}
+                      <AnimatePresence>
+                        {myViews.map((view, index) => renderViewItem(view, false, index))}
+                      </AnimatePresence>
                     </div>
                   </div>
                 )}
@@ -441,14 +535,21 @@ export function Sidebar() {
                       Shared with Me
                     </p>
                     <div className="space-y-0.5">
-                      {sharedViews.map((view) => renderViewItem(view, true))}
+                      <AnimatePresence>
+                        {sharedViews.map((view, index) => renderViewItem(view, true, index))}
+                      </AnimatePresence>
                     </div>
                   </div>
                 )}
 
                 {/* Empty State */}
                 {savedViewsForTable.length === 0 && (
-                  <div className="text-center py-4 px-2">
+                  <motion.div 
+                    className="text-center py-4 px-2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
                     <Bookmark className="h-6 w-6 mx-auto mb-2 text-muted-foreground/30" />
                     <p className="text-xs text-muted-foreground">No saved views</p>
                     {currentUser.permissions.canConfigureViews && (
@@ -462,7 +563,7 @@ export function Sidebar() {
                         Save Current View
                       </Button>
                     )}
-                  </div>
+                  </motion.div>
                 )}
               </CollapsibleContent>
             </Collapsible>
@@ -474,140 +575,205 @@ export function Sidebar() {
               <div className="flex items-center justify-between w-full px-2 py-1.5">
                 <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
                   <span>Filters</span>
-                  {filters.length > 0 && (
-                    <Badge className="h-5 px-1.5 text-[10px] bg-[#1BA9C4] hover:bg-[#1BA9C4]/90 border-0">
-                      {filters.length}
-                    </Badge>
-                  )}
-                  <ChevronDown className={`h-4 w-4 transition-transform ${filtersOpen ? '' : '-rotate-90'}`} />
-                </CollapsibleTrigger>
-                {filters.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      clearFilters();
-                    }}
+                  <AnimatePresence mode="wait">
+                    {filters.length > 0 && (
+                      <motion.div
+                        key={filters.length}
+                        variants={filterBadgeVariants}
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        transition={quickSpring}
+                      >
+                        <Badge className="h-5 px-1.5 text-[10px] bg-[#1BA9C4] hover:bg-[#1BA9C4]/90 border-0">
+                          {filters.length}
+                        </Badge>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <motion.div
+                    animate={{ rotate: filtersOpen ? 0 : -90 }}
+                    transition={quickSpring}
                   >
-                    Clear
-                  </Button>
-                )}
+                    <ChevronDown className="h-4 w-4" />
+                  </motion.div>
+                </CollapsibleTrigger>
+                <AnimatePresence>
+                  {filters.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={quickSpring}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearFilters();
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
               <CollapsibleContent className="mt-1">
                 {/* Active Filters */}
-                {filters.length > 0 && (
-                  <div className="space-y-1.5 mb-3">
-                    {filters.map((filter, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-2 px-2 py-1.5 text-xs bg-[#1BA9C4]/5 border border-[#1BA9C4]/10 rounded-md group"
-                      >
-                        <Filter className="h-3 w-3 text-[#1BA9C4] flex-shrink-0" />
-                        <span className="flex-1 truncate">
-                          <span className="font-medium text-[#1BA9C4]">{filter.field}</span>
-                          <span className="text-muted-foreground"> {filter.operator} </span>
-                          <span className="font-medium">"{filter.value}"</span>
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-micro hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => removeFilter(index)}
+                <AnimatePresence>
+                  {filters.length > 0 && (
+                    <motion.div 
+                      className="space-y-1.5 mb-3"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      {filters.map((filter, index) => (
+                        <motion.div
+                          key={`${filter.field}-${filter.value}-${index}`}
+                          variants={filterBadgeVariants}
+                          initial="initial"
+                          animate="animate"
+                          exit="exit"
+                          transition={{ ...quickSpring, delay: index * 0.03 }}
+                          layout
+                          className="flex items-center gap-2 px-2 py-1.5 text-xs bg-[#1BA9C4]/5 border border-[#1BA9C4]/10 rounded-md group"
                         >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                          <Filter className="h-3 w-3 text-[#1BA9C4] flex-shrink-0" />
+                          <span className="flex-1 truncate">
+                            <span className="font-medium text-[#1BA9C4]">{filter.field}</span>
+                            <span className="text-muted-foreground"> {filter.operator} </span>
+                            <span className="font-medium">"{filter.value}"</span>
+                          </span>
+                          <motion.div
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => removeFilter(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </motion.div>
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Add Filter */}
-                {!showFilterForm ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-[#1BA9C4] hover:bg-[#1BA9C4]/5"
-                    onClick={() => setShowFilterForm(true)}
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add filter</span>
-                  </Button>
-                ) : (
-                  <div className="space-y-3 p-3 bg-background border border-border rounded-lg shadow-sm">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Field</Label>
-                      <Select value={newFilterField} onValueChange={setNewFilterField}>
-                        <SelectTrigger className="h-8">
-                          <SelectValue placeholder="Select field" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filterableFields.map((field) => (
-                            <SelectItem key={field.key} value={field.key}>
-                              {field.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Condition</Label>
-                      <Select value={newFilterOperator} onValueChange={(v) => setNewFilterOperator(v as FilterType['operator'])}>
-                        <SelectTrigger className="h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="equals">equals</SelectItem>
-                          <SelectItem value="contains">contains</SelectItem>
-                          <SelectItem value="gt">greater than</SelectItem>
-                          <SelectItem value="lt">less than</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Value</Label>
-                      <Input
-                        placeholder="Enter value"
-                        value={newFilterValue}
-                        onChange={(e) => setNewFilterValue(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-
-                    <div className="flex gap-2">
+                <AnimatePresence mode="wait">
+                  {!showFilterForm ? (
+                    <motion.div
+                      key="add-button"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={quickSpring}
+                    >
                       <Button
+                        variant="ghost"
                         size="sm"
-                        variant="outline"
-                        className="flex-1 h-8"
-                        onClick={() => setShowFilterForm(false)}
+                        className="w-full justify-start gap-2 h-9 text-muted-foreground hover:text-[#1BA9C4] hover:bg-[#1BA9C4]/5"
+                        onClick={() => setShowFilterForm(true)}
                       >
-                        Cancel
+                        <Plus className="h-4 w-4" />
+                        <span>Add filter</span>
                       </Button>
-                      <Button
-                        size="sm"
-                        className="flex-1 h-8 bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0"
-                        onClick={handleAddFilter}
-                        disabled={!newFilterField || !newFilterValue}
-                      >
-                        Apply
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                    </motion.div>
+                  ) : (
+                    <motion.div 
+                      key="filter-form"
+                      className="space-y-3 p-3 bg-background border border-border rounded-lg shadow-sm"
+                      initial={{ opacity: 0, y: -10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: 'auto' }}
+                      exit={{ opacity: 0, y: -10, height: 0 }}
+                      transition={springTransition}
+                    >
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Field</Label>
+                        <Select value={newFilterField} onValueChange={setNewFilterField}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Select field" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filterableFields.map((field) => (
+                              <SelectItem key={field.key} value={field.key}>
+                                {field.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Condition</Label>
+                        <Select value={newFilterOperator} onValueChange={(v) => setNewFilterOperator(v as FilterType['operator'])}>
+                          <SelectTrigger className="h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="equals">equals</SelectItem>
+                            <SelectItem value="contains">contains</SelectItem>
+                            <SelectItem value="gt">greater than</SelectItem>
+                            <SelectItem value="lt">less than</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Value</Label>
+                        <Input
+                          placeholder="Enter value"
+                          value={newFilterValue}
+                          onChange={(e) => setNewFilterValue(e.target.value)}
+                          className="h-8"
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 h-8"
+                          onClick={() => setShowFilterForm(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 h-8 bg-[#0A3E6B] hover:bg-[#003B5C] text-white border-0"
+                          onClick={handleAddFilter}
+                          disabled={!newFilterField || !newFilterValue}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CollapsibleContent>
             </Collapsible>
           </div>
         </ScrollArea>
         
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-sidebar-border">
+        <motion.div 
+          className="p-3 border-t border-sidebar-border"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="text-xs text-muted-foreground text-center">
             <span className="font-medium"><span className="text-[#003B5C]">Grid</span><span className="text-[#1BA9C4]">lex</span></span> CRM v1.0
           </div>
-        </div>
+        </motion.div>
 
         {/* Save View Dialog */}
         <SaveViewDialog 

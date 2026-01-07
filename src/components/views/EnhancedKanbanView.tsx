@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ import {
 } from 'lucide-react';
 import { Record, Opportunity, Task, Contact, Organization } from '@/types';
 import { toast } from 'sonner';
+import { quickSpring, springTransition } from '@/lib/animations';
 
 interface KanbanColumn {
   id: string;
@@ -64,6 +66,21 @@ interface CardField {
 }
 
 type SwimlaneOption = 'none' | 'assignedTo' | 'priority' | 'organization';
+
+const cardVariants = {
+  initial: { opacity: 0, scale: 0.9, y: 20 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.9, y: -20 },
+  hover: { scale: 1.02, y: -4, boxShadow: '0 8px 25px rgba(0,0,0,0.1)' },
+  tap: { scale: 0.98 },
+  drag: { scale: 1.05, boxShadow: '0 15px 35px rgba(0,0,0,0.15)', zIndex: 50 },
+};
+
+const columnVariants = {
+  initial: { opacity: 0, x: 20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -20 },
+};
 
 export function EnhancedKanbanView() {
   const {
@@ -97,7 +114,6 @@ export function EnhancedKanbanView() {
   ]);
   const [wipLimits, setWipLimits] = useState<{ [key: string]: number }>({});
 
-  // Reset state when currentTable changes
   useEffect(() => {
     setDraggedRecord(null);
     setDragOverColumn(null);
@@ -248,7 +264,6 @@ export function EnhancedKanbanView() {
       const groupField = getGroupField();
       const currentValue = (draggedRecord as Record)[groupField as keyof Record];
       
-      // Check WIP limit
       const column = columns.find(c => c.id === columnId);
       if (column?.wipLimit) {
         const currentCount = getRecordsForColumnAndSwimlane(columnId, 'all').length;
@@ -285,7 +300,6 @@ export function EnhancedKanbanView() {
       [groupField]: columnId,
     };
     
-    // Add default values based on table type
     if (currentTable === 'tasks') {
       Object.assign(newRecord, {
         dueDate: new Date().toISOString().split('T')[0],
@@ -383,7 +397,7 @@ export function EnhancedKanbanView() {
 
   const swimlanes = getSwimlanes();
 
-  const renderCard = (record: Record) => {
+  const renderCard = (record: Record, index: number) => {
     const isOpportunity = record.tableType === 'opportunities';
     const isTask = record.tableType === 'tasks';
     const isHovered = hoveredCard === record.id;
@@ -391,113 +405,131 @@ export function EnhancedKanbanView() {
     const isDragging = draggedRecord?.id === record.id;
 
     return (
-      <Card
+      <motion.div
         key={record.id}
-        className={`cursor-grab active:cursor-grabbing transition-all hover:shadow-md ${
-          isDragging ? 'opacity-50 scale-[0.98] rotate-2' : ''
-        }`}
+        layout
+        variants={cardVariants}
+        initial="initial"
+        animate={isDragging ? "drag" : "animate"}
+        exit="exit"
+        whileHover="hover"
+        whileTap="tap"
+        transition={{ ...quickSpring, delay: index * 0.03 }}
+        className="cursor-grab active:cursor-grabbing"
         draggable={currentUser.permissions.canEditRecords}
-        onDragStart={(e) => handleDragStart(e, record)}
+        onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, record)}
         onDragEnd={handleDragEnd}
         onMouseEnter={() => setHoveredCard(record.id)}
         onMouseLeave={() => setHoveredCard(null)}
         onClick={() => openViewDialog(record)}
       >
-        <CardContent className="p-3">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex items-start gap-2 flex-1 min-w-0">
-              <GripVertical className="h-4 w-4 text-muted-foreground/50 mt-0.5 flex-shrink-0" />
-              <h4 className="text-sm font-medium text-foreground line-clamp-2">
-                {record.name}
-              </h4>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className={`h-6 w-6 flex-shrink-0 transition-micro ${
-                    isHovered ? 'opacity-100' : 'opacity-0'
-                  }`}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openViewDialog(record); }}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
-                </DropdownMenuItem>
-                {currentUser.permissions.canEditRecords && (
-                  <>
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(record.id); }}>
-                      <Eye className="h-4 w-4 mr-2" />
-                      Duplicate
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {currentUser.permissions.canDeleteRecords && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      className="text-destructive"
-                      onClick={(e) => { e.stopPropagation(); openDeleteDialog([record.id]); }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {isOpportunity && cardFields.find(f => f.key === 'value')?.visible && (
-            <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2">
-              <DollarSign className="h-4 w-4 text-emerald-600" />
-              {formatCurrency((record as Opportunity).value)}
-            </div>
-          )}
-
-          {isTask && cardFields.find(f => f.key === 'priority')?.visible && (
-            <div className="mb-2">
-              <Badge variant={getPriorityVariant((record as Task).priority)} className="text-xs">
-                {(record as Task).priority}
-              </Badge>
-            </div>
-          )}
-
-          <Separator className="my-2" />
-
-          <div className="flex items-center justify-between">
-            {cardFields.find(f => f.key === 'assignedTo')?.visible && (
-              <div className="flex items-center gap-2">
-                <Avatar className="h-6 w-6">
-                  <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                    {getInitials(subtitle)}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-xs text-muted-foreground truncate max-w-[100px]">
-                  {subtitle}
-                </span>
+        <Card className={`transition-colors ${isDragging ? 'opacity-50' : ''}`}>
+          <CardContent className="p-3">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex items-start gap-2 flex-1 min-w-0">
+                <GripVertical className="h-4 w-4 text-muted-foreground/50 mt-0.5 flex-shrink-0" />
+                <h4 className="text-sm font-medium text-foreground line-clamp-2">
+                  {record.name}
+                </h4>
               </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className={`h-6 w-6 flex-shrink-0 transition-all duration-150 ${
+                      isHovered ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openViewDialog(record); }}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </DropdownMenuItem>
+                  {currentUser.permissions.canEditRecords && (
+                    <>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(record.id); }}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Duplicate
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {currentUser.permissions.canDeleteRecords && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-destructive"
+                        onClick={(e) => { e.stopPropagation(); openDeleteDialog([record.id]); }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {isOpportunity && cardFields.find(f => f.key === 'value')?.visible && (
+              <motion.div 
+                className="flex items-center gap-1.5 text-sm font-semibold text-foreground mb-2"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <DollarSign className="h-4 w-4 text-emerald-600" />
+                {formatCurrency((record as Opportunity).value)}
+              </motion.div>
             )}
-            
-            {(isOpportunity || isTask) && cardFields.find(f => f.key === 'dueDate')?.visible && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                {new Date(
-                  (record as Opportunity).closeDate || (record as Task).dueDate
-                ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </div>
+
+            {isTask && cardFields.find(f => f.key === 'priority')?.visible && (
+              <motion.div 
+                className="mb-2"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+              >
+                <Badge variant={getPriorityVariant((record as Task).priority)} className="text-xs">
+                  {(record as Task).priority}
+                </Badge>
+              </motion.div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+
+            <Separator className="my-2" />
+
+            <div className="flex items-center justify-between">
+              {cardFields.find(f => f.key === 'assignedTo')?.visible && (
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                      {getInitials(subtitle)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+                    {subtitle}
+                  </span>
+                </div>
+              )}
+              
+              {(isOpportunity || isTask) && cardFields.find(f => f.key === 'dueDate')?.visible && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(
+                    (record as Opportunity).closeDate || (record as Task).dueDate
+                  ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     );
   };
 
@@ -505,15 +537,24 @@ export function EnhancedKanbanView() {
     <TooltipProvider>
       <div className="flex flex-col h-full overflow-hidden bg-muted/30">
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-background">
+        <motion.div 
+          className="flex items-center justify-between px-4 py-3 border-b border-border bg-background"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={springTransition}
+        >
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
+            <motion.span 
+              className="text-sm text-muted-foreground"
+              key={filteredRecords.length}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               {filteredRecords.length} {filteredRecords.length === 1 ? 'card' : 'cards'}
-            </span>
+            </motion.span>
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Swimlane Selector */}
             <Select value={swimlaneBy} onValueChange={(v) => setSwimlaneBy(v as SwimlaneOption)}>
               <SelectTrigger className="h-8 w-[160px]">
                 <Layers className="h-4 w-4 mr-2" />
@@ -531,7 +572,6 @@ export function EnhancedKanbanView() {
               </SelectContent>
             </Select>
 
-            {/* Card Fields */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 gap-2">
@@ -556,7 +596,7 @@ export function EnhancedKanbanView() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
+        </motion.div>
 
         {/* Board */}
         <div className="flex-1 overflow-auto">
@@ -564,194 +604,255 @@ export function EnhancedKanbanView() {
             <div key={swimlane} className="min-w-max">
               {/* Swimlane Header */}
               {swimlaneBy !== 'none' && (
-                <div 
+                <motion.div 
                   className="flex items-center gap-2 px-4 py-2 bg-muted/50 border-b border-border cursor-pointer hover:bg-muted/70"
                   onClick={() => toggleSwimlaneCollapse(swimlane)}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={springTransition}
                 >
-                  {collapsedSwimlanes.has(swimlane) ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
+                  <motion.div
+                    animate={{ rotate: collapsedSwimlanes.has(swimlane) ? -90 : 0 }}
+                    transition={quickSpring}
+                  >
                     <ChevronDown className="h-4 w-4" />
-                  )}
+                  </motion.div>
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium">{swimlane}</span>
                   <Badge variant="secondary" className="text-xs">
                     {columns.reduce((sum, col) => sum + getRecordsForColumnAndSwimlane(col.id, swimlane).length, 0)}
                   </Badge>
-                </div>
+                </motion.div>
               )}
 
               {/* Columns */}
-              {!collapsedSwimlanes.has(swimlane) && (
-                <div className="flex gap-4 p-4">
-                  {columns.map((column) => {
-                    const columnRecords = getRecordsForColumnAndSwimlane(column.id, swimlane);
-                    const isOver = dragOverColumn === column.id;
-                    const total = swimlane === 'all' || swimlaneBy === 'none' ? getColumnTotal(column.id) : null;
-                    const isCollapsed = collapsedColumns.has(column.id);
-                    const isOverWipLimit = column.wipLimit && columnRecords.length > column.wipLimit;
-                    const wipProgress = column.wipLimit ? (columnRecords.length / column.wipLimit) * 100 : 0;
+              <AnimatePresence>
+                {!collapsedSwimlanes.has(swimlane) && (
+                  <motion.div 
+                    className="flex gap-4 p-4"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={springTransition}
+                  >
+                    {columns.map((column, columnIndex) => {
+                      const columnRecords = getRecordsForColumnAndSwimlane(column.id, swimlane);
+                      const isOver = dragOverColumn === column.id;
+                      const total = swimlane === 'all' || swimlaneBy === 'none' ? getColumnTotal(column.id) : null;
+                      const isCollapsed = collapsedColumns.has(column.id);
+                      const isOverWipLimit = column.wipLimit && columnRecords.length > column.wipLimit;
+                      const wipProgress = column.wipLimit ? (columnRecords.length / column.wipLimit) * 100 : 0;
 
-                    if (isCollapsed) {
+                      if (isCollapsed) {
+                        return (
+                          <motion.div
+                            key={column.id}
+                            variants={columnVariants}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            transition={{ ...springTransition, delay: columnIndex * 0.05 }}
+                            className="w-10 flex-shrink-0 rounded-xl bg-background border border-border cursor-pointer hover:bg-muted/50"
+                            onClick={() => toggleColumnCollapse(column.id)}
+                          >
+                            <div className="flex flex-col items-center py-3 gap-2">
+                              <div className={`w-2 h-2 rounded-full ${column.color}`} />
+                              <span className="text-xs font-semibold writing-mode-vertical transform rotate-180" style={{ writingMode: 'vertical-rl' }}>
+                                {column.title}
+                              </span>
+                              <Badge variant="secondary" className="text-[10px] px-1">
+                                {columnRecords.length}
+                              </Badge>
+                            </div>
+                          </motion.div>
+                        );
+                      }
+
                       return (
-                        <div
+                        <motion.div
                           key={column.id}
-                          className="w-10 flex-shrink-0 rounded-xl bg-background border border-border cursor-pointer hover:bg-muted/50"
-                          onClick={() => toggleColumnCollapse(column.id)}
+                          variants={columnVariants}
+                          initial="initial"
+                          animate="animate"
+                          exit="exit"
+                          transition={{ ...springTransition, delay: columnIndex * 0.05 }}
+                          className={`flex flex-col w-80 flex-shrink-0 rounded-xl bg-background border transition-all ${
+                            isOver ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : 'border-border'
+                          } ${isOverWipLimit ? 'border-destructive' : ''}`}
+                          onDragOver={(e) => handleDragOver(e, column.id)}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDrop(e, column.id)}
                         >
-                          <div className="flex flex-col items-center py-3 gap-2">
-                            <div className={`w-2 h-2 rounded-full ${column.color}`} />
-                            <span className="text-xs font-semibold writing-mode-vertical transform rotate-180" style={{ writingMode: 'vertical-rl' }}>
-                              {column.title}
-                            </span>
-                            <Badge variant="secondary" className="text-[10px] px-1">
-                              {columnRecords.length}
-                            </Badge>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div
-                        key={column.id}
-                        className={`flex flex-col w-80 flex-shrink-0 rounded-xl bg-background border transition-all ${
-                          isOver ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : 'border-border'
-                        } ${isOverWipLimit ? 'border-destructive' : ''}`}
-                        onDragOver={(e) => handleDragOver(e, column.id)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, column.id)}
-                      >
-                        <div className="flex items-center justify-between px-3 py-3 border-b border-border">
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => toggleColumnCollapse(column.id)}>
-                              <ChevronDown className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                            </button>
-                            <div className={`w-2 h-2 rounded-full ${column.color}`} />
-                            <h3 className="text-sm font-semibold text-foreground">{column.title}</h3>
-                            <Badge variant={isOverWipLimit ? 'destructive' : 'secondary'} className="text-xs">
-                              {columnRecords.length}
-                              {column.wipLimit && `/${column.wipLimit}`}
-                            </Badge>
-                            {isOverWipLimit && (
+                          <div className="flex items-center justify-between px-3 py-3 border-b border-border">
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => toggleColumnCollapse(column.id)}>
+                                <ChevronDown className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </button>
+                              <motion.div 
+                                className={`w-2 h-2 rounded-full ${column.color}`}
+                                layoutId={`column-dot-${column.id}`}
+                              />
+                              <h3 className="text-sm font-semibold text-foreground">{column.title}</h3>
+                              <motion.div
+                                key={columnRecords.length}
+                                initial={{ scale: 0.8 }}
+                                animate={{ scale: 1 }}
+                                transition={quickSpring}
+                              >
+                                <Badge variant={isOverWipLimit ? 'destructive' : 'secondary'} className="text-xs">
+                                  {columnRecords.length}
+                                  {column.wipLimit && `/${column.wipLimit}`}
+                                </Badge>
+                              </motion.div>
+                              {isOverWipLimit && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      transition={quickSpring}
+                                    >
+                                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                                    </motion.div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>WIP limit exceeded</TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                            {currentUser.permissions.canEditRecords && (
                               <Tooltip>
-                                <TooltipTrigger>
-                                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-7 w-7"
+                                    onClick={() => setQuickAddColumn(column.id)}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>WIP limit exceeded</TooltipContent>
+                                <TooltipContent>Add new item</TooltipContent>
                               </Tooltip>
                             )}
                           </div>
-                          {currentUser.permissions.canEditRecords && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-7 w-7"
-                                  onClick={() => setQuickAddColumn(column.id)}
-                                >
-                                  <Plus className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Add new item</TooltipContent>
-                            </Tooltip>
+                          
+                          {/* WIP Progress */}
+                          {column.wipLimit && (
+                            <div className="px-3 py-1">
+                              <Progress 
+                                value={Math.min(wipProgress, 100)} 
+                                className={`h-1 ${isOverWipLimit ? '[&>div]:bg-destructive' : ''}`}
+                              />
+                            </div>
                           )}
-                        </div>
-                        
-                        {/* WIP Progress */}
-                        {column.wipLimit && (
-                          <div className="px-3 py-1">
-                            <Progress 
-                              value={Math.min(wipProgress, 100)} 
-                              className={`h-1 ${isOverWipLimit ? '[&>div]:bg-destructive' : ''}`}
-                            />
-                          </div>
-                        )}
-                        
-                        {total !== null && (
-                          <div className="px-3 py-2 border-b border-border bg-muted/30">
-                            <span className="text-xs text-muted-foreground">
-                              Total: <span className="font-medium text-foreground">{formatCurrency(total)}</span>
-                            </span>
-                          </div>
-                        )}
-                        
-                        <ScrollArea className="flex-1 px-2 py-2">
-                          <div className="space-y-2">
-                            {/* Quick Add Input */}
-                            {quickAddColumn === column.id && (
-                              <Card className="border-primary">
-                                <CardContent className="p-2">
-                                  <Input
-                                    placeholder="Enter title..."
-                                    value={quickAddValue}
-                                    onChange={(e) => setQuickAddValue(e.target.value)}
-                                    autoFocus
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleQuickAdd(column.id);
-                                      } else if (e.key === 'Escape') {
-                                        setQuickAddColumn(null);
-                                        setQuickAddValue('');
-                                      }
-                                    }}
-                                    onBlur={() => {
-                                      if (!quickAddValue.trim()) {
-                                        setQuickAddColumn(null);
-                                      }
-                                    }}
-                                    className="h-8"
-                                  />
-                                  <div className="flex gap-2 mt-2">
-                                    <Button 
-                                      size="sm" 
-                                      className="flex-1 h-7"
-                                      onClick={() => handleQuickAdd(column.id)}
-                                      disabled={!quickAddValue.trim()}
-                                    >
-                                      Add
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline" 
-                                      className="h-7"
-                                      onClick={() => {
-                                        setQuickAddColumn(null);
-                                        setQuickAddValue('');
-                                      }}
-                                    >
-                                      Cancel
-                                    </Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            )}
-                            
-                            {columnRecords.map((record) => renderCard(record))}
-                            {columnRecords.length === 0 && !quickAddColumn && (
-                              <div className="text-center py-8 text-muted-foreground text-sm">
-                                {isOver ? 'Drop here' : 'No items'}
-                              </div>
-                            )}
-                          </div>
-                        </ScrollArea>
-                        
-                        {/* Quick Add Button at Bottom */}
-                        {currentUser.permissions.canEditRecords && quickAddColumn !== column.id && (
-                          <button
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 border-t border-border transition-colors"
-                            onClick={() => setQuickAddColumn(column.id)}
-                          >
-                            <Plus className="h-4 w-4" />
-                            Add item
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                          
+                          {total !== null && (
+                            <motion.div 
+                              className="px-3 py-2 border-b border-border bg-muted/30"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                            >
+                              <span className="text-xs text-muted-foreground">
+                                Total: <span className="font-medium text-foreground">{formatCurrency(total)}</span>
+                              </span>
+                            </motion.div>
+                          )}
+                          
+                          <ScrollArea className="flex-1 px-2 py-2">
+                            <div className="space-y-2">
+                              {/* Quick Add Input */}
+                              <AnimatePresence>
+                                {quickAddColumn === column.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={springTransition}
+                                  >
+                                    <Card className="border-primary">
+                                      <CardContent className="p-2">
+                                        <Input
+                                          placeholder="Enter title..."
+                                          value={quickAddValue}
+                                          onChange={(e) => setQuickAddValue(e.target.value)}
+                                          autoFocus
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              handleQuickAdd(column.id);
+                                            } else if (e.key === 'Escape') {
+                                              setQuickAddColumn(null);
+                                              setQuickAddValue('');
+                                            }
+                                          }}
+                                          onBlur={() => {
+                                            if (!quickAddValue.trim()) {
+                                              setQuickAddColumn(null);
+                                            }
+                                          }}
+                                          className="h-8"
+                                        />
+                                        <div className="flex gap-2 mt-2">
+                                          <Button 
+                                            size="sm" 
+                                            className="flex-1 h-7"
+                                            onClick={() => handleQuickAdd(column.id)}
+                                            disabled={!quickAddValue.trim()}
+                                          >
+                                            Add
+                                          </Button>
+                                          <Button 
+                                            size="sm" 
+                                            variant="outline" 
+                                            className="h-7"
+                                            onClick={() => {
+                                              setQuickAddColumn(null);
+                                              setQuickAddValue('');
+                                            }}
+                                          >
+                                            Cancel
+                                          </Button>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                              
+                              <AnimatePresence mode="popLayout">
+                                {columnRecords.map((record, index) => renderCard(record, index))}
+                              </AnimatePresence>
+                              
+                              {columnRecords.length === 0 && !quickAddColumn && (
+                                <motion.div 
+                                  className="text-center py-8 text-muted-foreground text-sm"
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: 0.2 }}
+                                >
+                                  {isOver ? 'Drop here' : 'No items'}
+                                </motion.div>
+                              )}
+                            </div>
+                          </ScrollArea>
+                          
+                          {/* Quick Add Button at Bottom */}
+                          {currentUser.permissions.canEditRecords && quickAddColumn !== column.id && (
+                            <motion.button
+                              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 border-t border-border transition-colors"
+                              onClick={() => setQuickAddColumn(column.id)}
+                              whileHover={{ backgroundColor: 'rgba(0,0,0,0.05)' }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <Plus className="h-4 w-4" />
+                              Add item
+                            </motion.button>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           ))}
         </div>
