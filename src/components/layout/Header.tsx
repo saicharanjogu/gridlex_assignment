@@ -28,10 +28,13 @@ import {
   X,
   Bell,
   Command,
+  Save,
+  BookmarkCheck,
 } from 'lucide-react';
 import { TableType } from '@/types';
 import { ExportDialog } from '@/components/dialogs/ExportDialog';
 import { ViewConfigDialog } from '@/components/dialogs/ViewConfigDialog';
+import { SaveViewDialog } from '@/components/dialogs/SaveViewDialog';
 import { GridlexLogo } from '@/components/GridlexLogo';
 import { getFirstAvailableView } from '@/lib/view-availability';
 
@@ -41,6 +44,7 @@ export function Header() {
     currentView,
     currentTable,
     searchQuery,
+    activeViewConfig,
     setCurrentView,
     setCurrentTable,
     setSearchQuery,
@@ -50,6 +54,7 @@ export function Header() {
 
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [viewConfigOpen, setViewConfigOpen] = useState(false);
+  const [saveViewDialogOpen, setSaveViewDialogOpen] = useState(false);
 
   // When table changes, check if current view is still available
   useEffect(() => {
@@ -89,6 +94,14 @@ export function Header() {
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Active View Indicator */}
+            {activeViewConfig && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-[#1BA9C4]/10 rounded-md border border-[#1BA9C4]/20">
+                <BookmarkCheck className="h-3.5 w-3.5 text-[#1BA9C4]" />
+                <span className="text-xs font-medium text-[#003B5C]">{activeViewConfig.name}</span>
+              </div>
+            )}
           </div>
 
           {/* Center section - Search */}
@@ -138,19 +151,36 @@ export function Header() {
             </Tooltip>
 
             {currentUser.permissions.canConfigureViews && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-9 w-9 text-muted-foreground hover:text-[#003B5C]"
-                    onClick={() => setViewConfigOpen(true)}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Configure view</TooltipContent>
-              </Tooltip>
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-9 gap-2 text-muted-foreground hover:text-[#003B5C]"
+                      onClick={() => setSaveViewDialogOpen(true)}
+                    >
+                      <Save className="h-4 w-4" />
+                      <span className="hidden sm:inline">Save View</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Save current view</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-9 w-9 text-muted-foreground hover:text-[#003B5C]"
+                      onClick={() => setViewConfigOpen(true)}
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Configure view</TooltipContent>
+                </Tooltip>
+              </>
             )}
 
             {currentUser.permissions.canExport && (
@@ -224,6 +254,7 @@ export function Header() {
 
       <ExportDialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} />
       <ViewConfigDialog open={viewConfigOpen} onClose={() => setViewConfigOpen(false)} />
+      <SaveViewDialog open={saveViewDialogOpen} onClose={() => setSaveViewDialogOpen(false)} />
     </TooltipProvider>
   );
 }

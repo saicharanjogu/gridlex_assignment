@@ -4,6 +4,8 @@ export type ViewType = 'list' | 'kanban' | 'calendar' | 'map';
 
 export type UserRole = 'admin' | 'manager' | 'viewer';
 
+export type ShareMode = 'private' | 'team' | 'public';
+
 export interface User {
   id: string;
   name: string;
@@ -39,6 +41,10 @@ export interface ViewConfig {
   groupBy?: string;
   savedBy: string;
   isDefault: boolean;
+  isShared?: boolean;
+  shareMode?: ShareMode;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Filter {

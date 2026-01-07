@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { ViewType, TableType, ViewConfig, Filter, User, Record, Contact, Opportunity, Organization, Task } from '@/types';
 import { mockUser, mockContacts, mockOpportunities, mockOrganizations, mockTasks, defaultViewConfigs } from '@/data/mock-data';
 
@@ -34,8 +34,15 @@ interface AppContextType extends AppState {
   toggleRecordSelection: (id: string) => void;
   selectAllRecords: (ids: string[]) => void;
   clearSelection: () => void;
+  
+  // View Config Operations
   saveViewConfig: (config: ViewConfig) => void;
+  deleteViewConfig: (id: string) => void;
+  duplicateViewConfig: (id: string) => void;
+  setViewAsDefault: (id: string) => void;
   setActiveViewConfig: (config: ViewConfig | null) => void;
+  getViewsForTable: (tableType: TableType | 'unified') => ViewConfig[];
+  
   getRecordsForCurrentTable: () => Record[];
   
   // CRUD Operations
@@ -61,11 +68,27 @@ interface AppContextType extends AppState {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Local storage key for view configs
+const VIEW_CONFIGS_STORAGE_KEY = 'gridlex-view-configs';
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser] = useState<User>(mockUser);
   const [currentView, setCurrentView] = useState<ViewType>('list');
-  const [currentTable, setCurrentTable] = useState<TableType | 'unified'>('contacts');
-  const [viewConfigs, setViewConfigs] = useState<ViewConfig[]>(defaultViewConfigs);
+  const [currentTable, setCurrentTableState] = useState<TableType | 'unified'>('contacts');
+  const [viewConfigs, setViewConfigs] = useState<ViewConfig[]>(() => {
+    // Try to load from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(VIEW_CONFIGS_STORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          return defaultViewConfigs;
+        }
+      }
+    }
+    return defaultViewConfigs;
+  });
   const [activeViewConfig, setActiveViewConfig] = useState<ViewConfig | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<Filter[]>([]);
@@ -85,6 +108,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>(mockOpportunities);
   const [organizations, setOrganizations] = useState<Organization[]>(mockOrganizations);
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
+
+  // Persist view configs to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(VIEW_CONFIGS_STORAGE_KEY, JSON.stringify(viewConfigs));
+    }
+  }, [viewConfigs]);
+
+  // Load default view when table changes
+  useEffect(() => {
+    const defaultView = viewConfigs.find(
+      v => (v.tableType === currentTable || v.tableType === 'unified') && v.isDefault
+    );
+    if (defaultView) {
+      setActiveViewConfig(defaultView);
+      setCurrentView(defaultView.type);
+      setFilters(defaultView.filters || []);
+    } else {
+      setActiveViewConfig(null);
+    }
+  }, [currentTable, viewConfigs]);
+
+  const setCurrentTable = useCallback((table: TableType | 'unified') => {
+    setCurrentTableState(table);
+    setSelectedRecords([]);
+    setSearchQuery('');
+  }, []);
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
   const getCurrentDate = () => new Date().toISOString().split('T')[0];
@@ -115,17 +165,69 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSelectedRecords([]);
   }, []);
 
+  // View Config Operations
   const saveViewConfig = useCallback((config: ViewConfig) => {
     setViewConfigs(prev => {
       const existingIndex = prev.findIndex(v => v.id === config.id);
+      let updated: ViewConfig[];
+      
       if (existingIndex >= 0) {
-        const updated = [...prev];
+        updated = [...prev];
         updated[existingIndex] = config;
-        return updated;
+      } else {
+        updated = [...prev, config];
       }
-      return [...prev, config];
+      
+      // If this is set as default, unset other defaults for the same table
+      if (config.isDefault) {
+        updated = updated.map(v => 
+          v.id !== config.id && v.tableType === config.tableType
+            ? { ...v, isDefault: false }
+            : v
+        );
+      }
+      
+      return updated;
+    });
+    setActiveViewConfig(config);
+  }, []);
+
+  const deleteViewConfig = useCallback((id: string) => {
+    setViewConfigs(prev => prev.filter(v => v.id !== id));
+    if (activeViewConfig?.id === id) {
+      setActiveViewConfig(null);
+    }
+  }, [activeViewConfig]);
+
+  const duplicateViewConfig = useCallback((id: string) => {
+    const original = viewConfigs.find(v => v.id === id);
+    if (!original) return;
+
+    const duplicate: ViewConfig = {
+      ...original,
+      id: generateId(),
+      name: `${original.name} (Copy)`,
+      isDefault: false,
+    };
+    
+    setViewConfigs(prev => [...prev, duplicate]);
+  }, [viewConfigs]);
+
+  const setViewAsDefault = useCallback((id: string) => {
+    setViewConfigs(prev => {
+      const view = prev.find(v => v.id === id);
+      if (!view) return prev;
+      
+      return prev.map(v => ({
+        ...v,
+        isDefault: v.id === id ? true : (v.tableType === view.tableType ? false : v.isDefault)
+      }));
     });
   }, []);
+
+  const getViewsForTable = useCallback((tableType: TableType | 'unified'): ViewConfig[] => {
+    return viewConfigs.filter(v => v.tableType === tableType || v.tableType === 'unified');
+  }, [viewConfigs]);
 
   const getRecordsForCurrentTable = useCallback((): Record[] => {
     switch (currentTable) {
@@ -297,7 +399,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     selectAllRecords,
     clearSelection,
     saveViewConfig,
+    deleteViewConfig,
+    duplicateViewConfig,
+    setViewAsDefault,
     setActiveViewConfig,
+    getViewsForTable,
     getRecordsForCurrentTable,
     createRecord,
     updateRecord,

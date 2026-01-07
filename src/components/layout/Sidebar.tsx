@@ -26,6 +26,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { 
   Plus, 
   X, 
@@ -39,20 +46,30 @@ import {
   CheckSquare,
   TrendingUp,
   Bookmark,
+  BookmarkCheck,
   Filter,
   Sparkles,
   Lock,
   Check,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Copy,
+  Save,
 } from 'lucide-react';
 import { getFieldsForTable } from '@/data/mock-data';
-import { Filter as FilterType, TableType, ViewType } from '@/types';
+import { Filter as FilterType, TableType, ViewType, ViewConfig } from '@/types';
 import { getViewAvailability, getAvailableViews } from '@/lib/view-availability';
+import { SaveViewDialog } from '@/components/dialogs/SaveViewDialog';
+import { toast } from 'sonner';
 
 export function Sidebar() {
   const {
     currentUser,
     currentTable,
+    currentView,
     viewConfigs,
+    activeViewConfig,
     filters,
     addFilter,
     removeFilter,
@@ -60,6 +77,10 @@ export function Sidebar() {
     setActiveViewConfig,
     setCurrentTable,
     setCurrentView,
+    setFilters,
+    deleteViewConfig,
+    duplicateViewConfig,
+    setViewAsDefault,
   } = useApp();
 
   const [newFilterField, setNewFilterField] = useState('');
@@ -69,6 +90,8 @@ export function Sidebar() {
   const [tablesOpen, setTablesOpen] = useState(true);
   const [viewsOpen, setViewsOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [editingView, setEditingView] = useState<ViewConfig | null>(null);
 
   const fields = getFieldsForTable(currentTable === 'unified' ? 'contacts' : currentTable);
   const filterableFields = fields.filter(f => f.filterable);
@@ -97,6 +120,9 @@ export function Sidebar() {
     v => v.tableType === currentTable || v.tableType === 'unified'
   );
 
+  const myViews = savedViewsForTable.filter(v => v.savedBy === currentUser.id);
+  const sharedViews = savedViewsForTable.filter(v => v.savedBy !== currentUser.id && v.isShared);
+
   const getViewIcon = (type: string) => {
     switch (type) {
       case 'list': return <List className="h-4 w-4" />;
@@ -107,7 +133,6 @@ export function Sidebar() {
     }
   };
 
-  // Get available views for current table
   const availableViews = getAvailableViews(currentTable);
 
   const viewTypeLabels: Record<ViewType, string> = {
@@ -115,6 +140,143 @@ export function Sidebar() {
     kanban: 'Board',
     calendar: 'Calendar',
     map: 'Map',
+  };
+
+  const handleViewClick = (view: ViewConfig) => {
+    const availability = getViewAvailability(currentTable, view.type);
+    if (!availability.available) {
+      toast.error(`${viewTypeLabels[view.type]} view is not available for ${currentTable}`);
+      return;
+    }
+    
+    setActiveViewConfig(view);
+    setCurrentView(view.type);
+    if (view.filters && view.filters.length > 0) {
+      setFilters(view.filters);
+    }
+    toast.success(`Switched to "${view.name}"`);
+  };
+
+  const handleEditView = (view: ViewConfig) => {
+    setEditingView(view);
+    setSaveDialogOpen(true);
+  };
+
+  const handleDuplicateView = (view: ViewConfig) => {
+    duplicateViewConfig(view.id);
+    toast.success('View duplicated');
+  };
+
+  const handleDeleteView = (view: ViewConfig) => {
+    if (view.isDefault) {
+      toast.error('Cannot delete the default view');
+      return;
+    }
+    deleteViewConfig(view.id);
+    toast.success('View deleted');
+  };
+
+  const handleSetDefault = (view: ViewConfig) => {
+    setViewAsDefault(view.id);
+    toast.success(`"${view.name}" set as default`);
+  };
+
+  const handleCloseDialog = () => {
+    setSaveDialogOpen(false);
+    setEditingView(null);
+  };
+
+  const renderViewItem = (view: ViewConfig, showOwner = false) => {
+    const isActive = activeViewConfig?.id === view.id;
+    const availability = getViewAvailability(currentTable, view.type);
+    const isAvailable = availability.available;
+    const isOwner = view.savedBy === currentUser.id;
+
+    return (
+      <div
+        key={view.id}
+        className={`group flex items-center gap-2 px-2 py-2 rounded-lg transition-all ${
+          isActive 
+            ? 'bg-[#1BA9C4]/10 border border-[#1BA9C4]/30' 
+            : isAvailable 
+              ? 'hover:bg-muted/50 cursor-pointer' 
+              : 'opacity-50 cursor-not-allowed'
+        }`}
+        onClick={() => isAvailable && handleViewClick(view)}
+      >
+        <div className={`flex-shrink-0 ${isActive ? 'text-[#1BA9C4]' : 'text-muted-foreground'}`}>
+          {getViewIcon(view.type)}
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className={`text-sm font-medium truncate ${isActive ? 'text-[#003B5C]' : ''}`}>
+              {view.name}
+            </span>
+            {view.isDefault && (
+              <BookmarkCheck className="h-3 w-3 text-[#1BA9C4] flex-shrink-0" />
+            )}
+          </div>
+          {showOwner && !isOwner && (
+            <p className="text-xs text-muted-foreground truncate">
+              Shared view
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {view.filters && view.filters.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger>
+                <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                  <Filter className="h-3 w-3 mr-0.5" />
+                  {view.filters.length}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>{view.filters.length} saved filter(s)</TooltipContent>
+            </Tooltip>
+          )}
+
+          {isOwner && currentUser.permissions.canConfigureViews && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditView(view); }}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit View
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicateView(view); }}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Duplicate
+                </DropdownMenuItem>
+                {!view.isDefault && (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSetDefault(view); }}>
+                    <Bookmark className="h-4 w-4 mr-2" />
+                    Set as Default
+                  </DropdownMenuItem>
+                )}
+                {!view.isDefault && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteView(view); }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -164,7 +326,6 @@ export function Sidebar() {
                             {item.icon}
                           </span>
                           <span className="flex-1 text-left">{item.label}</span>
-                          {/* View availability indicators */}
                           <div className="flex items-center gap-0.5">
                             {(['list', 'kanban', 'calendar', 'map'] as ViewType[]).map((viewType) => {
                               const isAvailable = itemAvailableViews.includes(viewType);
@@ -228,119 +389,81 @@ export function Sidebar() {
 
             <Separator className="my-3" />
 
-            {/* Available Views for Current Table */}
-            <div className="px-2 py-1.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Available Views
-              </p>
-              <div className="grid grid-cols-2 gap-1">
-                {(['list', 'kanban', 'calendar', 'map'] as ViewType[]).map((viewType) => {
-                  const availability = getViewAvailability(currentTable, viewType);
-                  const isAvailable = availability.available;
-                  
-                  return (
-                    <Tooltip key={viewType}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`h-8 justify-start gap-2 ${
-                            isAvailable 
-                              ? 'text-muted-foreground hover:text-[#003B5C] hover:bg-[#1BA9C4]/5' 
-                              : 'text-muted-foreground/40 cursor-not-allowed hover:bg-transparent'
-                          }`}
-                          onClick={() => isAvailable && setCurrentView(viewType)}
-                          disabled={!isAvailable}
-                        >
-                          {isAvailable ? (
-                            <Check className="h-3 w-3 text-[#1BA9C4]" />
-                          ) : (
-                            <Lock className="h-3 w-3" />
-                          )}
-                          <span className="text-xs">{viewTypeLabels[viewType]}</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-[200px]">
-                        {isAvailable ? (
-                          <p className="text-xs">Click to switch to {viewTypeLabels[viewType]} view</p>
-                        ) : (
-                          <div>
-                            <p className="font-medium text-xs mb-1">{viewTypeLabels[viewType]} - Unavailable</p>
-                            <p className="text-xs text-muted-foreground">{availability.reason}</p>
-                          </div>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </div>
-
-            <Separator className="my-3" />
-
             {/* Saved Views Section */}
             <Collapsible open={viewsOpen} onOpenChange={setViewsOpen}>
               <div className="flex items-center justify-between w-full px-2 py-1.5">
                 <CollapsibleTrigger className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-[#003B5C] transition-micro">
                   <span>Saved Views</span>
+                  {savedViewsForTable.length > 0 && (
+                    <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                      {savedViewsForTable.length}
+                    </Badge>
+                  )}
                   <ChevronDown className={`h-4 w-4 transition-transform ${viewsOpen ? '' : '-rotate-90'}`} />
                 </CollapsibleTrigger>
                 {currentUser.permissions.canConfigureViews && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 hover:bg-[#1BA9C4]/10 hover:text-[#1BA9C4]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 hover:bg-[#1BA9C4]/10 hover:text-[#1BA9C4]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingView(null);
+                          setSaveDialogOpen(true);
+                        }}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Save current view</TooltipContent>
+                  </Tooltip>
                 )}
               </div>
-              <CollapsibleContent className="space-y-0.5 mt-1">
-                {savedViewsForTable.map((view) => {
-                  const viewAvailability = getViewAvailability(currentTable, view.type);
-                  const isAvailable = viewAvailability.available;
-                  
-                  return (
-                    <Tooltip key={view.id}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`w-full justify-start gap-3 h-9 ${
-                            isAvailable 
-                              ? 'text-muted-foreground hover:text-[#003B5C] hover:bg-[#1BA9C4]/5'
-                              : 'text-muted-foreground/40 cursor-not-allowed hover:bg-transparent'
-                          }`}
-                          onClick={() => {
-                            if (isAvailable) {
-                              setActiveViewConfig(view);
-                              setCurrentView(view.type);
-                            }
-                          }}
-                          disabled={!isAvailable}
-                        >
-                          <span className={!isAvailable ? 'opacity-40' : ''}>
-                            {getViewIcon(view.type)}
-                          </span>
-                          <span className="flex-1 text-left truncate">{view.name}</span>
-                          {!isAvailable && <Lock className="h-3 w-3" />}
-                          {view.isDefault && isAvailable && (
-                            <Bookmark className="h-3 w-3 text-[#1BA9C4] fill-[#1BA9C4]" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      {!isAvailable && (
-                        <TooltipContent side="right" className="max-w-[200px]">
-                          <p className="font-medium text-xs mb-1">View Unavailable</p>
-                          <p className="text-xs text-muted-foreground">{viewAvailability.reason}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  );
-                })}
+              <CollapsibleContent className="mt-1 space-y-3">
+                {/* My Views */}
+                {myViews.length > 0 && (
+                  <div>
+                    <p className="px-2 mb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      My Views
+                    </p>
+                    <div className="space-y-0.5">
+                      {myViews.map((view) => renderViewItem(view))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Shared Views */}
+                {sharedViews.length > 0 && (
+                  <div>
+                    <p className="px-2 mb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      Shared with Me
+                    </p>
+                    <div className="space-y-0.5">
+                      {sharedViews.map((view) => renderViewItem(view, true))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State */}
+                {savedViewsForTable.length === 0 && (
+                  <div className="text-center py-4 px-2">
+                    <Bookmark className="h-6 w-6 mx-auto mb-2 text-muted-foreground/30" />
+                    <p className="text-xs text-muted-foreground">No saved views</p>
+                    {currentUser.permissions.canConfigureViews && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="mt-2 h-7 text-xs text-[#1BA9C4] hover:text-[#1BA9C4] hover:bg-[#1BA9C4]/10"
+                        onClick={() => setSaveDialogOpen(true)}
+                      >
+                        <Save className="h-3 w-3 mr-1" />
+                        Save Current View
+                      </Button>
+                    )}
+                  </div>
+                )}
               </CollapsibleContent>
             </Collapsible>
 
@@ -485,6 +608,13 @@ export function Sidebar() {
             <span className="font-medium"><span className="text-[#003B5C]">Grid</span><span className="text-[#1BA9C4]">lex</span></span> CRM v1.0
           </div>
         </div>
+
+        {/* Save View Dialog */}
+        <SaveViewDialog 
+          open={saveDialogOpen} 
+          onClose={handleCloseDialog}
+          editingView={editingView}
+        />
       </aside>
     </TooltipProvider>
   );
