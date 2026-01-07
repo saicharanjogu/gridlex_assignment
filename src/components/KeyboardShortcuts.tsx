@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
 interface KeyboardShortcutsProps {
@@ -63,7 +64,7 @@ const shortcutGroups: ShortcutGroup[] = [
 export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
           <DialogDescription>
@@ -71,38 +72,40 @@ export function KeyboardShortcuts({ open, onClose }: KeyboardShortcutsProps) {
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-6 mt-4">
-          {shortcutGroups.map((group, index) => (
-            <div key={group.title}>
-              {index > 0 && <Separator className="mb-4" />}
-              <h4 className="text-sm font-semibold text-muted-foreground mb-3">
-                {group.title}
-              </h4>
-              <div className="space-y-2">
-                {group.shortcuts.map((shortcut) => (
-                  <div
-                    key={shortcut.description}
-                    className="flex items-center justify-between"
-                  >
-                    <span className="text-sm">{shortcut.description}</span>
-                    <div className="flex items-center gap-1">
-                      {shortcut.keys.map((key, i) => (
-                        <React.Fragment key={key}>
-                          <kbd className="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded">
-                            {key}
-                          </kbd>
-                          {i < shortcut.keys.length - 1 && (
-                            <span className="text-muted-foreground">+</span>
-                          )}
-                        </React.Fragment>
-                      ))}
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-6 py-4">
+            {shortcutGroups.map((group, index) => (
+              <div key={group.title}>
+                {index > 0 && <Separator className="mb-4" />}
+                <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+                  {group.title}
+                </h4>
+                <div className="space-y-2">
+                  {group.shortcuts.map((shortcut) => (
+                    <div
+                      key={shortcut.description}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-sm">{shortcut.description}</span>
+                      <div className="flex items-center gap-1">
+                        {shortcut.keys.map((key, i) => (
+                          <React.Fragment key={key}>
+                            <kbd className="px-2 py-1 text-xs font-semibold bg-muted border border-border rounded">
+                              {key}
+                            </kbd>
+                            {i < shortcut.keys.length - 1 && (
+                              <span className="text-muted-foreground">+</span>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
